@@ -1,0 +1,145 @@
+[
+  {
+    "id": "pujut-adong",
+    "name": "Pujut Adong",
+    "short": "PA",
+    "lat": 4.4256,
+    "lng": 114.0231,
+    "pilot": true,
+    "elevation_m": 1.6,
+    "past_floods": 12,
+    "population": 9400,
+    "area": "Jalan Adong 1 / 2A, Pujut, beside Sungai Miri",
+    "roads": [
+      "Jalan Adong 1",
+      "Jalan Adong 2A",
+      "Jalan Pujut Adong"
+    ],
+    "drain": "Sg. Adong tidal outfall (Smart Drain SD-PA-01)",
+    "cctv": "CAM-PA-02",
+    "relief_centre": "Dewan Masyarakat Pujut (relief centre)",
+    "pump_point": "Sg. Adong outfall culvert",
+    "known_mechanisms": [
+      "Tidal Backflow",
+      "River Overflow"
+    ]
+  },
+  {
+    "id": "tanjung-batu",
+    "name": "Tanjung Batu",
+    "short": "TB",
+    "lat": 4.4069,
+    "lng": 114.0183,
+    "pilot": true,
+    "elevation_m": 1.9,
+    "past_floods": 9,
+    "population": 7100,
+    "area": "Jalan Tanjung Batu 4-7, Padang Kerbau",
+    "roads": [
+      "Jalan Tanjung Batu 4",
+      "Jalan Tanjung Batu 7"
+    ],
+    "drain": "Padang Kerbau main drain (SD-TB-01)",
+    "cctv": "CAM-TB-01",
+    "relief_centre": "Dewan Masyarakat Krokop (relief centre)",
+    "pump_point": "Jalan Tanjung Batu 7 sump",
+    "known_mechanisms": [
+      "Tidal Backflow",
+      "Low-lying terrain"
+    ]
+  },
+  {
+    "id": "taman-tunku",
+    "name": "Jalan Dato / Taman Tunku",
+    "short": "TT",
+    "lat": 4.3135,
+    "lng": 113.9923,
+    "pilot": true,
+    "elevation_m": 2.4,
+    "past_floods": 10,
+    "population": 11800,
+    "area": "Taman Tunku and Jalan Dato catchment",
+    "roads": [
+      "Jalan Dato",
+      "Jalan Taman Tunku"
+    ],
+    "drain": "Taman Tunku trunk drain (SD-TT-02)",
+    "cctv": "CAM-TT-03",
+    "relief_centre": "Dewan Masyarakat Lusut (relief centre)",
+    "pump_point": "Taman Tunku trunk drain junction",
+    "known_mechanisms": [
+      "Rainfall Overload",
+      "Tidal Backflow"
+    ]
+  },
+  {
+    "id": "senadin-mcot",
+    "name": "Senadin / MCOT",
+    "short": "SM",
+    "lat": 4.5007,
+    "lng": 114.0168,
+    "pilot": false,
+    "elevation_m": 3.1,
+    "past_floods": 8,
+    "population": 13500,
+    "area": "Senadin commercial area and MCOT",
+    "roads": [
+      "Jalan Senadin",
+      "Jalan Kuala Baram Bypass"
+    ],
+    "drain": "Senadin collector drain (SD-SM-01)",
+    "cctv": "CAM-SM-01",
+    "relief_centre": "Dewan Senadin (relief centre)",
+    "pump_point": "Senadin collector drain",
+    "known_mechanisms": [
+      "Rainfall Overload"
+    ]
+  },
+  {
+    "id": "desa-senadin",
+    "name": "Desa Senadin",
+    "short": "DS",
+    "lat": 4.4947,
+    "lng": 114.0349,
+    "pilot": false,
+    "elevation_m": 2.8,
+    "past_floods": 7,
+    "population": 6900,
+    "area": "Desa Senadin residential estate",
+    "roads": [
+      "Jalan Desa Senadin",
+      "Lorong Desa Senadin 2"
+    ],
+    "drain": "Desa Senadin estate drain (SD-DS-01)",
+    "cctv": "CAM-DS-01",
+    "relief_centre": "SK Senadin hall (relief centre)",
+    "pump_point": "Desa Senadin estate outfall",
+    "known_mechanisms": [
+      "Rainfall Overload",
+      "Low-lying terrain"
+    ]
+  },
+  {
+    "id": "tudan-desaras",
+    "name": "Tudan Desaras",
+    "short": "TD",
+    "lat": 4.4735,
+    "lng": 114.0302,
+    "pilot": false,
+    "elevation_m": 3.8,
+    "past_floods": 6,
+    "population": 8800,
+    "area": "Tudan / Desaras, foot of the Tudan hills",
+    "roads": [
+      "Jalan Tudan",
+      "Lorong Desaras 1A"
+    ],
+    "drain": "Tudan hillside interceptor drain (SD-TD-01)",
+    "cctv": "CAM-TD-02",
+    "relief_centre": "Dewan Masyarakat Tudan (relief centre)",
+    "pump_point": "Lorong Desaras 1A culvert",
+    "known_mechanisms": [
+      "Rainfall Overload"
+    ]
+  }
+]

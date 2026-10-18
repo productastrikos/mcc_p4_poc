@@ -1,0 +1,7 @@
+node_modules/
+build/
+.env*.local
+__pycache__/
+server/.env
+server/artifacts/
+server/data/alerts.json

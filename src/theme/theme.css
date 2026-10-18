@@ -1,0 +1,211 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   THEME TOKENS: the only file you need to edit to re-brand the app.
+
+   Every component reads these variables, so changing a value here
+   updates it everywhere. Dark mode is the default; light mode
+   overrides are in the second block.
+
+   Tokens are grouped as:
+     1. Brand         primary / accent colours
+     2. Surfaces      page, sidebar, header, cards, inputs
+     3. Text
+     4. Status        success / warning / danger / info
+     5. Buttons       every button variant
+     6. Cards         background, border, radius, padding, shadow
+     7. Charts        series palette + chart chrome
+     8. Layout        sizes, radii, font
+   Chart colours must be hex values (they are read by canvas code).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* 1. Brand ─────────────────────────────────────────────── */
+  --color-primary:          #3a8bf0;                   /* MCC blue */
+  --color-primary-hover:    #2a78dc;
+  --color-primary-soft:     rgba(58, 139, 240, 0.15);  /* active nav, selected chip */
+  --color-primary-border:   rgba(58, 139, 240, 0.42);
+  --color-on-primary:       #ffffff;                   /* text on primary bg */
+
+  --color-accent:           #8b5cf6;                   /* AI / Gen-AI features */
+  --color-accent-hover:     #7c3aed;
+  --color-accent-soft:      rgba(139, 92, 246, 0.15);
+  --color-accent-border:    rgba(139, 92, 246, 0.42);
+  --color-on-accent:        #ffffff;
+
+  /* 2. Surfaces ──────────────────────────────────────────── */
+  --color-bg:               #06101e;   /* page background */
+  --color-sidebar:          #091628;
+  --color-header:           #091628;
+  --color-surface:          #0c1a2f;   /* cards, panels, menus */
+  --color-surface-raised:   #12243d;   /* tiles inside cards, hover rows */
+  --color-input:            #081325;
+  --color-overlay:          rgba(2, 8, 18, 0.62);   /* modal backdrop */
+  --color-border:           rgba(140, 180, 235, 0.11);
+  --color-border-strong:    rgba(140, 180, 235, 0.22);
+
+  /* 3. Text ──────────────────────────────────────────────── */
+  --color-text:             #e8f0fa;
+  --color-text-muted:       #b3c6dd;
+  --color-text-faint:       #8299b5;
+  --color-sidebar-text:     #cbd8e8;
+
+  /* 4. Status ────────────────────────────────────────────── */
+  /* Flood risk levels map onto these: Normal = success, Watch = watch,
+     Warning = warning, Danger = danger. */
+  --color-success:          #22c55e;
+  --color-success-soft:     rgba(34, 197, 94, 0.14);
+  --color-success-border:   rgba(34, 197, 94, 0.34);
+  --color-watch:            #eab308;
+  --color-watch-soft:       rgba(234, 179, 8, 0.14);
+  --color-watch-border:     rgba(234, 179, 8, 0.36);
+  --color-warning:          #f97316;
+  --color-warning-soft:     rgba(249, 115, 22, 0.15);
+  --color-warning-border:   rgba(249, 115, 22, 0.38);
+  --color-danger:           #ef4444;
+  --color-danger-soft:      rgba(239, 68, 68, 0.15);
+  --color-danger-border:    rgba(239, 68, 68, 0.40);
+  --color-info:             #0ea5e9;
+  --color-info-soft:        rgba(14, 165, 233, 0.14);
+  --color-info-border:      rgba(14, 165, 233, 0.34);
+  --color-neutral:          #94a3b8;
+  --color-neutral-soft:     rgba(148, 163, 184, 0.14);
+  --color-neutral-border:   rgba(148, 163, 184, 0.30);
+
+  /* 5. Buttons ───────────────────────────────────────────── */
+  --btn-radius:             8px;
+  --btn-font-weight:        600;
+
+  --btn-primary-bg:         var(--color-primary);
+  --btn-primary-bg-hover:   var(--color-primary-hover);
+  --btn-primary-text:       var(--color-on-primary);
+  --btn-primary-shadow:     0 2px 10px rgba(58, 139, 240, 0.28);
+
+  --btn-secondary-bg:       var(--color-surface-raised);
+  --btn-secondary-bg-hover: #1a3050;
+  --btn-secondary-text:     var(--color-text);
+  --btn-secondary-border:   var(--color-border-strong);
+
+  --btn-ghost-text:         var(--color-text-muted);
+  --btn-ghost-bg-hover:     var(--color-surface-raised);
+
+  --btn-danger-bg:          var(--color-danger);
+  --btn-danger-bg-hover:    #dc2626;
+  --btn-danger-text:        #ffffff;
+
+  --btn-accent-bg:          var(--color-accent);
+  --btn-accent-bg-hover:    var(--color-accent-hover);
+  --btn-accent-text:        var(--color-on-accent);
+
+  /* 6. Cards ─────────────────────────────────────────────── */
+  --card-bg:                var(--color-surface);
+  --card-border:            var(--color-border);
+  --card-radius:            14px;
+  --card-padding:           16px;
+  --card-shadow:            none;
+  --card-hover-shadow:      0 6px 24px rgba(0, 0, 0, 0.30);
+  --card-hover-lift:        -2px;
+  --tile-bg:                var(--color-surface-raised);  /* small cards inside cards */
+  --tile-radius:            10px;
+
+  /* 7. Charts ────────────────────────────────────────────── */
+  --chart-1:                #3a8bf0;   /* rain */
+  --chart-2:                #22d3ee;   /* tide */
+  --chart-3:                #2dd4bf;   /* river */
+  --chart-4:                #a78bfa;   /* drain */
+  --chart-5:                #f472b6;
+  --chart-6:                #fbbf24;
+  --chart-7:                #a3e635;
+  --chart-8:                #94a3b8;
+  --chart-grid:             rgba(160, 190, 230, 0.07);
+  --chart-tick:             #8299b5;
+  --chart-tooltip-bg:       #0c1a2f;
+  --chart-tooltip-border:   #24406a;
+
+  /* 8. Layout ────────────────────────────────────────────── */
+  --font-sans:              'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sidebar-width:          244px;
+  --sidebar-width-collapsed: 64px;
+  --header-height:          62px;
+  --radius-sm:              6px;
+  --radius-md:              10px;
+  --radius-lg:              14px;
+  --shadow-lg:              0 8px 30px rgba(0, 0, 0, 0.40);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* 1. Brand */
+  --color-primary:          #0b5cc4;
+  --color-primary-hover:    #094ca3;
+  --color-primary-soft:     rgba(11, 92, 196, 0.10);
+  --color-primary-border:   rgba(11, 92, 196, 0.35);
+  --color-accent:           #7c3aed;
+  --color-accent-hover:     #6d28d9;
+  --color-accent-soft:      rgba(124, 58, 237, 0.09);
+  --color-accent-border:    rgba(124, 58, 237, 0.32);
+
+  /* 2. Surfaces */
+  --color-bg:               #edf2f9;
+  --color-sidebar:          #ffffff;
+  --color-header:           #ffffff;
+  --color-surface:          #ffffff;
+  --color-surface-raised:   #f2f6fc;
+  --color-input:            #ffffff;
+  --color-overlay:          rgba(12, 30, 56, 0.40);
+  --color-border:           rgba(12, 40, 85, 0.11);
+  --color-border-strong:    rgba(12, 40, 85, 0.22);
+
+  /* 3. Text */
+  --color-text:             #0c1a2e;
+  --color-text-muted:       #31445e;
+  --color-text-faint:       #5f7290;
+  --color-sidebar-text:     #31445e;
+
+  /* 4. Status: darker shades for contrast on white */
+  --color-success:          #15803d;
+  --color-success-soft:     rgba(21, 128, 61, 0.10);
+  --color-success-border:   rgba(21, 128, 61, 0.28);
+  --color-watch:            #a16207;
+  --color-watch-soft:       rgba(161, 98, 7, 0.11);
+  --color-watch-border:     rgba(161, 98, 7, 0.30);
+  --color-warning:          #c2410c;
+  --color-warning-soft:     rgba(194, 65, 12, 0.10);
+  --color-warning-border:   rgba(194, 65, 12, 0.30);
+  --color-danger:           #b91c1c;
+  --color-danger-soft:      rgba(185, 28, 28, 0.09);
+  --color-danger-border:    rgba(185, 28, 28, 0.30);
+  --color-info:             #0369a1;
+  --color-info-soft:        rgba(3, 105, 161, 0.09);
+  --color-info-border:      rgba(3, 105, 161, 0.28);
+  --color-neutral:          #64748b;
+  --color-neutral-soft:     rgba(100, 116, 139, 0.10);
+  --color-neutral-border:   rgba(100, 116, 139, 0.28);
+
+  /* 5. Buttons */
+  --btn-primary-shadow:     0 2px 8px rgba(11, 92, 196, 0.22);
+  --btn-secondary-bg:       #ffffff;
+  --btn-secondary-bg-hover: #f2f6fc;
+  --btn-danger-bg-hover:    #991b1b;
+
+  /* 6. Cards */
+  --card-shadow:            0 1px 3px rgba(12, 40, 85, 0.07);
+  --card-hover-shadow:      0 6px 20px rgba(12, 40, 85, 0.11);
+
+  /* 7. Charts */
+  --chart-1:                #0b5cc4;
+  --chart-2:                #0891b2;
+  --chart-3:                #0f766e;
+  --chart-4:                #7c3aed;
+  --chart-5:                #db2777;
+  --chart-6:                #b45309;
+  --chart-grid:             rgba(12, 40, 85, 0.07);
+  --chart-tick:             #5f7290;
+  --chart-tooltip-bg:       #ffffff;
+  --chart-tooltip-border:   #c3d6f0;
+
+  /* 8. Layout */
+  --shadow-lg:              0 8px 30px rgba(12, 40, 85, 0.15);
+}
