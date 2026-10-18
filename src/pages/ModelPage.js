@@ -104,7 +104,7 @@ export default function ModelPage() {
             options={{ indexAxis: 'y' }}
             data={{
               labels: ['FloodSense: Warning', 'FloodSense: Watch', 'Reactive: drain ≥ 90%'],
-              datasets: [{ label: 'Mean lead time (h)', data: [lead.ai_warning.mean_lead_h, lead.ai_watch.mean_lead_h, lead.baseline_drain90.mean_lead_h], color: ['primary', 'watch', 'neutral'] }],
+              datasets: [{ label: 'Mean lead time (h)', data: [lead.ai_warning.mean_lead_h, lead.ai_watch.mean_lead_h, lead.baseline_drain90.mean_lead_h], color: ['primary', 'info', 'neutral'] }],
             }}
           />
           <ChartCard

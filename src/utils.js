@@ -45,7 +45,7 @@ export const initials = (name = '') =>
    name used by Badge, tone-* classes and charts. */
 export const LEVELS = [
   { name: 'Normal',  min: 0,    tone: 'success' },
-  { name: 'Watch',   min: 0.25, tone: 'watch' },
+  { name: 'Watch',   min: 0.25, tone: 'info' },
   { name: 'Warning', min: 0.5,  tone: 'warning' },
   { name: 'Danger',  min: 0.75, tone: 'danger' },
 ];

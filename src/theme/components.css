@@ -163,7 +163,6 @@ body {
 }
 .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .tone-success { color: var(--color-success); background: var(--color-success-soft); border-color: var(--color-success-border); }
-.tone-watch   { color: var(--color-watch);   background: var(--color-watch-soft);   border-color: var(--color-watch-border); }
 .tone-warning { color: var(--color-warning); background: var(--color-warning-soft); border-color: var(--color-warning-border); }
 .tone-danger  { color: var(--color-danger);  background: var(--color-danger-soft);  border-color: var(--color-danger-border); }
 .tone-info    { color: var(--color-info);    background: var(--color-info-soft);    border-color: var(--color-info-border); }
@@ -422,9 +421,6 @@ button.avatar:hover { box-shadow: 0 0 0 3px var(--color-primary-soft); }
 
 /* ═══ FloodSense ═══════════════════════════════════════════════ */
 
-/* Dark basemap: invert OSM tiles and turn them blue-grey to match the theme */
-.map-dark .leaflet-tile-pane { filter: invert(1) hue-rotate(185deg) brightness(0.92) contrast(0.88) saturate(0.55); }
-
 /* Hotspot markers on the Leaflet map (L.divIcon) */
 .risk-marker { position: relative; width: 34px; height: 34px; }
 .risk-marker-dot {
@@ -453,10 +449,6 @@ button.avatar:hover { box-shadow: 0 0 0 3px var(--color-primary-soft); }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--color-surface); color: var(--color-text); }
 .leaflet-popup-content { margin: 12px 14px; font-family: var(--font-sans); }
 .leaflet-container a.leaflet-popup-close-button { color: var(--color-text-faint); }
-.leaflet-control-attribution { background: rgba(0, 0, 0, 0.35) !important; color: #cbd5e1 !important; }
-.leaflet-control-attribution a { color: #e2e8f0 !important; }
-:root[data-theme='light'] .leaflet-control-attribution { background: rgba(255, 255, 255, 0.75) !important; color: #475569 !important; }
-:root[data-theme='light'] .leaflet-control-attribution a { color: #1e3a5f !important; }
 
 /* Forecast cells (+1h / +3h / +6h) */
 .fc-cell {
@@ -482,15 +474,15 @@ button.avatar:hover { box-shadow: 0 0 0 3px var(--color-primary-soft); }
 .phone {
   width: 100%; max-width: 330px; margin: 0 auto;
   border-radius: 26px; padding: 14px 12px 18px;
-  background: linear-gradient(160deg, #0e2a4f, #061428);
+  background: linear-gradient(160deg, #26262b, #0e0e10);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: var(--shadow-lg);
 }
 .phone-notch { width: 90px; height: 6px; margin: 0 auto 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); }
-.phone-time { text-align: center; color: #e2ecf8; font-size: 30px; font-weight: 300; letter-spacing: -0.02em; }
-.phone-date { text-align: center; color: #a9bdd6; font-size: 11px; margin-bottom: 12px; }
-.phone-notif { background: rgba(255, 255, 255, 0.92); color: #0c1a2e; border-radius: 14px; padding: 10px 12px; }
-.phone-notif-app { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.phone-time { text-align: center; color: #e8eef5; font-size: 30px; font-weight: 300; letter-spacing: -0.02em; }
+.phone-date { text-align: center; color: #afc3d8; font-size: 11px; margin-bottom: 12px; }
+.phone-notif { background: rgba(255, 255, 255, 0.92); color: #0f172a; border-radius: 14px; padding: 10px 12px; }
+.phone-notif-app { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
 .phone-notif-body { font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
 
 /* Driver bars */

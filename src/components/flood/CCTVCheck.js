@@ -5,7 +5,7 @@ import { api, fileToBase64, urlToBase64 } from '../../services/api';
 import { useData } from '../../data/DataProvider';
 import { pct } from '../../utils';
 
-export const CCTV_TONE = { Normal: 'success', Rising: 'watch', Overflowing: 'warning', 'Road Flooded': 'danger' };
+export const CCTV_TONE = { Normal: 'success', Rising: 'info', Overflowing: 'warning', 'Road Flooded': 'danger' };
 
 /**
  * CCTV water-level check for one hotspot. The frame is classified by the

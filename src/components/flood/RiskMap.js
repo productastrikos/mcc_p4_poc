@@ -10,8 +10,7 @@ import { Button } from '../ui';
 // Covers the six hotspots, from Taman Tunku in the south to Senadin in the north.
 const BOUNDS = [[4.300, 113.975], [4.512, 114.05]];
 
-// Standard OpenStreetMap tiles; dark mode darkens them with a CSS filter
-// (.map-dark in components.css), so no tile API key is needed.
+// Standard OpenStreetMap tiles, as on the template's map page (no API key needed).
 const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 // Senadin / MCOT and Desa Senadin sit close together, so their labels split left and right.
@@ -35,8 +34,7 @@ function markerIcon(h, level, selected, color) {
 export default function RiskMap({ hotspots, selectedId, onSelect, onOpen, height = 420, labels = true }) {
   const { theme } = useTheme();
   return (
-    <MapContainer bounds={BOUNDS} style={{ height, width: '100%' }} scrollWheelZoom={false} zoomSnap={0.25}
-      className={theme === 'dark' ? 'map-dark' : ''}>
+    <MapContainer bounds={BOUNDS} style={{ height, width: '100%' }} scrollWheelZoom={false} zoomSnap={0.25}>
       <TileLayer
         url={OSM_TILES}
         maxZoom={19}

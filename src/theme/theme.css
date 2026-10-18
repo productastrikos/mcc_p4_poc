@@ -22,53 +22,48 @@
   color-scheme: dark;
 
   /* 1. Brand ─────────────────────────────────────────────── */
-  --color-primary:          #3a8bf0;                   /* MCC blue */
-  --color-primary-hover:    #2a78dc;
-  --color-primary-soft:     rgba(58, 139, 240, 0.15);  /* active nav, selected chip */
-  --color-primary-border:   rgba(58, 139, 240, 0.42);
+  --color-primary:          #3b7de8;
+  --color-primary-hover:    #2d6ad4;
+  --color-primary-soft:     rgba(59, 125, 232, 0.14);  /* active nav, selected chip */
+  --color-primary-border:   rgba(59, 125, 232, 0.40);
   --color-on-primary:       #ffffff;                   /* text on primary bg */
 
-  --color-accent:           #8b5cf6;                   /* AI / Gen-AI features */
+  --color-accent:           #8b5cf6;                   /* AI / insight features */
   --color-accent-hover:     #7c3aed;
-  --color-accent-soft:      rgba(139, 92, 246, 0.15);
-  --color-accent-border:    rgba(139, 92, 246, 0.42);
+  --color-accent-soft:      rgba(139, 92, 246, 0.14);
+  --color-accent-border:    rgba(139, 92, 246, 0.40);
   --color-on-accent:        #ffffff;
 
   /* 2. Surfaces ──────────────────────────────────────────── */
-  --color-bg:               #06101e;   /* page background */
-  --color-sidebar:          #091628;
-  --color-header:           #091628;
-  --color-surface:          #0c1a2f;   /* cards, panels, menus */
-  --color-surface-raised:   #12243d;   /* tiles inside cards, hover rows */
-  --color-input:            #081325;
-  --color-overlay:          rgba(2, 8, 18, 0.62);   /* modal backdrop */
-  --color-border:           rgba(140, 180, 235, 0.11);
-  --color-border-strong:    rgba(140, 180, 235, 0.22);
+  --color-bg:               #0e0e10;   /* page background */
+  --color-sidebar:          #17171a;
+  --color-header:           #17171a;
+  --color-surface:          #1c1c20;   /* cards, panels, menus */
+  --color-surface-raised:   #26262b;   /* tiles inside cards, hover rows */
+  --color-input:            #141417;
+  --color-overlay:          rgba(0, 0, 0, 0.55);   /* modal backdrop */
+  --color-border:           rgba(255, 255, 255, 0.08);
+  --color-border-strong:    rgba(255, 255, 255, 0.16);
 
   /* 3. Text ──────────────────────────────────────────────── */
-  --color-text:             #e8f0fa;
-  --color-text-muted:       #b3c6dd;
-  --color-text-faint:       #8299b5;
-  --color-sidebar-text:     #cbd8e8;
+  --color-text:             #e8eef5;
+  --color-text-muted:       #afc3d8;
+  --color-text-faint:       #8196ad;
+  --color-sidebar-text:     #cfd8e3;
 
   /* 4. Status ────────────────────────────────────────────── */
-  /* Flood risk levels map onto these: Normal = success, Watch = watch,
-     Warning = warning, Danger = danger. */
   --color-success:          #22c55e;
   --color-success-soft:     rgba(34, 197, 94, 0.14);
-  --color-success-border:   rgba(34, 197, 94, 0.34);
-  --color-watch:            #eab308;
-  --color-watch-soft:       rgba(234, 179, 8, 0.14);
-  --color-watch-border:     rgba(234, 179, 8, 0.36);
-  --color-warning:          #f97316;
-  --color-warning-soft:     rgba(249, 115, 22, 0.15);
-  --color-warning-border:   rgba(249, 115, 22, 0.38);
+  --color-success-border:   rgba(34, 197, 94, 0.32);
+  --color-warning:          #f59e0b;
+  --color-warning-soft:     rgba(245, 158, 11, 0.14);
+  --color-warning-border:   rgba(245, 158, 11, 0.32);
   --color-danger:           #ef4444;
-  --color-danger-soft:      rgba(239, 68, 68, 0.15);
-  --color-danger-border:    rgba(239, 68, 68, 0.40);
+  --color-danger-soft:      rgba(239, 68, 68, 0.14);
+  --color-danger-border:    rgba(239, 68, 68, 0.32);
   --color-info:             #0ea5e9;
   --color-info-soft:        rgba(14, 165, 233, 0.14);
-  --color-info-border:      rgba(14, 165, 233, 0.34);
+  --color-info-border:      rgba(14, 165, 233, 0.32);
   --color-neutral:          #94a3b8;
   --color-neutral-soft:     rgba(148, 163, 184, 0.14);
   --color-neutral-border:   rgba(148, 163, 184, 0.30);
@@ -80,10 +75,10 @@
   --btn-primary-bg:         var(--color-primary);
   --btn-primary-bg-hover:   var(--color-primary-hover);
   --btn-primary-text:       var(--color-on-primary);
-  --btn-primary-shadow:     0 2px 10px rgba(58, 139, 240, 0.28);
+  --btn-primary-shadow:     0 2px 10px rgba(59, 125, 232, 0.25);
 
   --btn-secondary-bg:       var(--color-surface-raised);
-  --btn-secondary-bg-hover: #1a3050;
+  --btn-secondary-bg-hover: #303036;
   --btn-secondary-text:     var(--color-text);
   --btn-secondary-border:   var(--color-border-strong);
 
@@ -110,18 +105,18 @@
   --tile-radius:            10px;
 
   /* 7. Charts ────────────────────────────────────────────── */
-  --chart-1:                #3a8bf0;   /* rain */
-  --chart-2:                #22d3ee;   /* tide */
-  --chart-3:                #2dd4bf;   /* river */
-  --chart-4:                #a78bfa;   /* drain */
-  --chart-5:                #f472b6;
-  --chart-6:                #fbbf24;
+  --chart-1:                #3b7de8;
+  --chart-2:                #ec4899;
+  --chart-3:                #14b8a6;
+  --chart-4:                #f59e0b;
+  --chart-5:                #8b5cf6;
+  --chart-6:                #0ea5e9;
   --chart-7:                #a3e635;
   --chart-8:                #94a3b8;
-  --chart-grid:             rgba(160, 190, 230, 0.07);
-  --chart-tick:             #8299b5;
-  --chart-tooltip-bg:       #0c1a2f;
-  --chart-tooltip-border:   #24406a;
+  --chart-grid:             rgba(255, 255, 255, 0.05);
+  --chart-tick:             #8196ad;
+  --chart-tooltip-bg:       #1c1c20;
+  --chart-tooltip-border:   #33333a;
 
   /* 8. Layout ────────────────────────────────────────────── */
   --font-sans:              'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -138,45 +133,42 @@
   color-scheme: light;
 
   /* 1. Brand */
-  --color-primary:          #0b5cc4;
-  --color-primary-hover:    #094ca3;
-  --color-primary-soft:     rgba(11, 92, 196, 0.10);
-  --color-primary-border:   rgba(11, 92, 196, 0.35);
+  --color-primary:          #2f6fdb;
+  --color-primary-hover:    #245bc0;
+  --color-primary-soft:     rgba(47, 111, 219, 0.10);
+  --color-primary-border:   rgba(47, 111, 219, 0.35);
   --color-accent:           #7c3aed;
   --color-accent-hover:     #6d28d9;
   --color-accent-soft:      rgba(124, 58, 237, 0.09);
   --color-accent-border:    rgba(124, 58, 237, 0.32);
 
   /* 2. Surfaces */
-  --color-bg:               #edf2f9;
+  --color-bg:               #f1f5fa;
   --color-sidebar:          #ffffff;
   --color-header:           #ffffff;
   --color-surface:          #ffffff;
-  --color-surface-raised:   #f2f6fc;
+  --color-surface-raised:   #f3f6fb;
   --color-input:            #ffffff;
-  --color-overlay:          rgba(12, 30, 56, 0.40);
-  --color-border:           rgba(12, 40, 85, 0.11);
-  --color-border-strong:    rgba(12, 40, 85, 0.22);
+  --color-overlay:          rgba(20, 35, 55, 0.40);
+  --color-border:           rgba(15, 35, 75, 0.10);
+  --color-border-strong:    rgba(15, 35, 75, 0.20);
 
   /* 3. Text */
-  --color-text:             #0c1a2e;
-  --color-text-muted:       #31445e;
-  --color-text-faint:       #5f7290;
-  --color-sidebar-text:     #31445e;
+  --color-text:             #0f172a;
+  --color-text-muted:       #334155;
+  --color-text-faint:       #64748b;
+  --color-sidebar-text:     #334155;
 
   /* 4. Status: darker shades for contrast on white */
   --color-success:          #15803d;
   --color-success-soft:     rgba(21, 128, 61, 0.10);
   --color-success-border:   rgba(21, 128, 61, 0.28);
-  --color-watch:            #a16207;
-  --color-watch-soft:       rgba(161, 98, 7, 0.11);
-  --color-watch-border:     rgba(161, 98, 7, 0.30);
-  --color-warning:          #c2410c;
-  --color-warning-soft:     rgba(194, 65, 12, 0.10);
-  --color-warning-border:   rgba(194, 65, 12, 0.30);
+  --color-warning:          #b45309;
+  --color-warning-soft:     rgba(180, 83, 9, 0.10);
+  --color-warning-border:   rgba(180, 83, 9, 0.28);
   --color-danger:           #b91c1c;
   --color-danger-soft:      rgba(185, 28, 28, 0.09);
-  --color-danger-border:    rgba(185, 28, 28, 0.30);
+  --color-danger-border:    rgba(185, 28, 28, 0.28);
   --color-info:             #0369a1;
   --color-info-soft:        rgba(3, 105, 161, 0.09);
   --color-info-border:      rgba(3, 105, 161, 0.28);
@@ -185,27 +177,22 @@
   --color-neutral-border:   rgba(100, 116, 139, 0.28);
 
   /* 5. Buttons */
-  --btn-primary-shadow:     0 2px 8px rgba(11, 92, 196, 0.22);
+  --btn-primary-shadow:     0 2px 8px rgba(47, 111, 219, 0.22);
   --btn-secondary-bg:       #ffffff;
-  --btn-secondary-bg-hover: #f2f6fc;
+  --btn-secondary-bg-hover: #f3f6fb;
   --btn-danger-bg-hover:    #991b1b;
 
   /* 6. Cards */
-  --card-shadow:            0 1px 3px rgba(12, 40, 85, 0.07);
-  --card-hover-shadow:      0 6px 20px rgba(12, 40, 85, 0.11);
+  --card-shadow:            0 1px 3px rgba(15, 35, 75, 0.06);
+  --card-hover-shadow:      0 6px 20px rgba(15, 35, 75, 0.10);
 
   /* 7. Charts */
-  --chart-1:                #0b5cc4;
-  --chart-2:                #0891b2;
-  --chart-3:                #0f766e;
-  --chart-4:                #7c3aed;
-  --chart-5:                #db2777;
-  --chart-6:                #b45309;
-  --chart-grid:             rgba(12, 40, 85, 0.07);
-  --chart-tick:             #5f7290;
+  --chart-1:                #2f6fdb;
+  --chart-grid:             rgba(15, 35, 75, 0.07);
+  --chart-tick:             #64748b;
   --chart-tooltip-bg:       #ffffff;
-  --chart-tooltip-border:   #c3d6f0;
+  --chart-tooltip-border:   #c5d9f5;
 
   /* 8. Layout */
-  --shadow-lg:              0 8px 30px rgba(12, 40, 85, 0.15);
+  --shadow-lg:              0 8px 30px rgba(15, 35, 75, 0.14);
 }

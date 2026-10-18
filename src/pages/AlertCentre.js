@@ -39,7 +39,7 @@ function PhonePreview({ en, ms, level }) {
         <div className="phone-notif-app">
           <img src="/floodsense.svg" alt="" width={14} height={14} style={{ borderRadius: 3 }} />
           Miri CARES · now
-          <span className="ml-auto" style={{ color: level === 'Danger' ? '#b91c1c' : '#c2410c' }}>{level.toUpperCase()}</span>
+          <span className="ml-auto" style={{ color: level === 'Danger' ? '#b91c1c' : '#b45309' }}>{level.toUpperCase()}</span>
         </div>
         <div className="phone-notif-body">{en}{'\n\n'}{ms}</div>
       </div>

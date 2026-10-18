@@ -187,7 +187,7 @@ export default function Dashboard() {
                 { label: 'Miri River (m)', data: hist.river, color: 'chart-3', fill: false },
               ],
             }}
-            thresholds={[{ value: 2.0, tone: 'watch', label: 'High tide', description: '≥ 2.0 m' }]}
+            thresholds={[{ value: 2.0, tone: 'info', label: 'High tide', description: '≥ 2.0 m' }]}
           />
         </div>
       )}

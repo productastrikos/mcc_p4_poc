@@ -12,7 +12,6 @@ module.exports = {
         primary:   { DEFAULT: token('color-primary'), soft: token('color-primary-soft') },
         accent:    { DEFAULT: token('color-accent'),  soft: token('color-accent-soft') },
         success:   { DEFAULT: token('color-success'), soft: token('color-success-soft') },
-        watch:     { DEFAULT: token('color-watch'),   soft: token('color-watch-soft') },
         warning:   { DEFAULT: token('color-warning'), soft: token('color-warning-soft') },
         danger:    { DEFAULT: token('color-danger'),  soft: token('color-danger-soft') },
         info:      { DEFAULT: token('color-info'),    soft: token('color-info-soft') },

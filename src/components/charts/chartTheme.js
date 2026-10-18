@@ -48,7 +48,7 @@ export function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-const NAMED = ['primary', 'accent', 'success', 'watch', 'warning', 'danger', 'info', 'neutral'];
+const NAMED = ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral'];
 
 /** Resolve 'primary' | 'success' | 'chart-3' | '#hex' to a concrete colour. */
 export function resolveColor(name) {

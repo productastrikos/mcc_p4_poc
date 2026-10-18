@@ -11,7 +11,7 @@ import { api } from '../services/api';
 import { fmtHours, hhmm, levelFor, pct } from '../utils';
 
 const LEVEL_LINES = [
-  { value: 25, tone: 'watch', label: 'Watch', description: '≥ 25%' },
+  { value: 25, tone: 'info', label: 'Watch', description: '≥ 25%' },
   { value: 50, tone: 'warning', label: 'Warning', description: '≥ 50%' },
   { value: 75, tone: 'danger', label: 'Danger', description: '≥ 75%' },
 ];
@@ -105,7 +105,7 @@ export default function HotspotDetail() {
               datasets: [
                 { label: '+1 h', data: hist.p1.map((v) => (v == null ? null : v * 100)), color: 'chart-5', fill: false },
                 { label: '+3 h', data: hist.p3.map((v) => (v == null ? null : v * 100)), color: 'primary', fill: false, borderWidth: 2.5 },
-                { label: '+6 h', data: hist.p6.map((v) => (v == null ? null : v * 100)), color: 'chart-4', fill: false, borderDash: [5, 3] },
+                { label: '+6 h', data: hist.p6.map((v) => (v == null ? null : v * 100)), color: 'chart-8', fill: false, borderDash: [5, 3] },
               ],
             }}
             thresholds={LEVEL_LINES}
@@ -127,7 +127,7 @@ export default function HotspotDetail() {
                 { label: 'Miri River (m)', data: hist.river, color: 'chart-3', fill: false },
               ],
             }}
-            thresholds={[{ value: 2.0, tone: 'watch', label: 'High tide', description: '≥ 2.0 m' }]}
+            thresholds={[{ value: 2.0, tone: 'info', label: 'High tide', description: '≥ 2.0 m' }]}
           />
         </div>
       )}

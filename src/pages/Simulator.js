@@ -150,11 +150,11 @@ export default function Simulator() {
                   datasets: [
                     { label: 'Flood within 1 h', data: sel.timeline.p1.map((v) => v * 100), color: 'chart-5', fill: false },
                     { label: 'Flood within 3 h', data: sel.timeline.p3.map((v) => v * 100), color: 'primary', fill: false, borderWidth: 2.5 },
-                    { label: 'Flood within 6 h', data: sel.timeline.p6.map((v) => v * 100), color: 'chart-4', fill: false, borderDash: [5, 3] },
+                    { label: 'Flood within 6 h', data: sel.timeline.p6.map((v) => v * 100), color: 'chart-8', fill: false, borderDash: [5, 3] },
                   ],
                 }}
                 thresholds={[
-                  { value: 25, tone: 'watch', label: 'Watch' },
+                  { value: 25, tone: 'info', label: 'Watch' },
                   { value: 50, tone: 'warning', label: 'Warning' },
                   { value: 75, tone: 'danger', label: 'Danger' },
                 ]}

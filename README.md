@@ -99,10 +99,11 @@ src/                       React UI (Create React App, Tailwind, Chart.js, React
   pages/                   Dashboard, Hotspots, HotspotDetail, Simulator, AlertCentre, ModelPage
   components/flood/        risk map, forecast cells, cause panel, CCTV check, feed controls
   data/DataProvider.js     polls /api/live and /api/alerts
-  theme/                   colours and component styles (light and dark)
+  theme/                   the template's colours and component styles, unchanged (FloodSense-only
+                           classes are appended at the end of components.css)
 ```
 
-The UI is built on the dashboard template that was already in this folder. Its unused example pages (`Charts`, `Tables`, `ListDetail`, `MapPage`) and `sampleData.js` are still in `src/` but are not routed.
+The UI is built on the dashboard template that was already in this folder and keeps its theme: colours, buttons, cards and chart styles all come from `src/theme/theme.css`. Flood levels use the template's status colours (Normal = success, Watch = info, Warning = warning, Danger = danger). Its unused example pages (`Charts`, `Tables`, `ListDetail`, `MapPage`) and `sampleData.js` are still in `src/` but are not routed.
 
 ## API
 
