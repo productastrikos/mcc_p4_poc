@@ -506,3 +506,114 @@ button.avatar:hover { box-shadow: 0 0 0 3px var(--color-primary-soft); }
   position: fixed; bottom: 20px; right: 20px; z-index: 1500; max-width: 380px;
   animation: slide-up 0.2s ease-out;
 }
+
+/* Flooding marker, map flags and live/simulation dot */
+.flooding-chip { animation: flood-pulse 1.8s ease-in-out infinite; }
+@keyframes flood-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.65; } }
+.live-dot.is-sim { background: var(--color-warning); animation: none; }
+.risk-marker.is-flooding .risk-marker-dot { box-shadow: 0 0 0 3px var(--color-danger), 0 2px 8px rgba(0, 0, 0, 0.35); }
+.risk-marker-flag {
+  position: absolute; top: -6px; min-width: 15px; height: 15px; padding: 0 3px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 999px; border: 1.5px solid #ffffff;
+  font: 800 9px/1 var(--font-sans); color: #ffffff;
+}
+.risk-marker-flag.is-flood { right: -6px; background: var(--color-danger); }
+.risk-marker-flag.is-pump { left: -6px; background: var(--color-primary); }
+
+/* Clickable sensor tiles and operations log entries */
+.sensor-tile-btn { cursor: pointer; font-family: inherit; color: inherit; }
+.sensor-tile-btn:focus-visible { outline: 2px solid var(--color-primary-border); outline-offset: 2px; }
+.ops-entry { display: flex; gap: 10px; width: 100%; padding: 6px 8px; border-radius: 8px; font-size: 12px; text-align: left; background: none; border: none; font-family: inherit; color: inherit; }
+.ops-entry.is-link { cursor: pointer; }
+.ops-entry.is-link:hover { background: var(--color-surface-raised); }
+
+/* Sidebar count badges */
+.nav-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; background: var(--color-warning-soft); color: var(--color-warning); border: 1px solid var(--color-warning-border); }
+.nav-badge.is-dot { position: absolute; right: 10px; min-width: 8px; width: 8px; height: 8px; padding: 0; background: var(--color-warning); }
+.nav-item { position: relative; }
+
+/* Response actions */
+.response-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--tile-radius); background: var(--tile-bg); border: 1px solid var(--color-border); }
+.pump-chip { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 7px; font-size: 11px; background: var(--tile-bg); border: 1px solid var(--color-border); color: var(--color-text); }
+.pump-chip button { background: none; border: none; font: inherit; color: inherit; cursor: pointer; padding: 0; }
+.pump-chip button:disabled { cursor: default; }
+.pump-chip.is-out { border-color: var(--color-primary-border); background: var(--color-primary-soft); }
+
+/* Duty sign-in */
+.signin-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--color-bg); }
+.signin-card { width: 100%; max-width: 400px; padding: 28px; }
+
+/* SITREP preview */
+.sitrep { white-space: pre-wrap; font: 11.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-text-muted); background: var(--tile-bg); border: 1px solid var(--color-border); border-radius: var(--tile-radius); padding: 14px; max-height: 60vh; overflow: auto; }
+
+/* Digital twin cross-section */
+.twin-card { padding: 0; overflow: hidden; cursor: pointer; transition: border-color 0.15s ease, box-shadow 0.15s ease; font-family: inherit; color: inherit; }
+.twin-card:hover { border-color: var(--color-primary-border); }
+.twin-card.is-selected { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary); }
+.twin-card.is-flooded { border-color: var(--color-danger-border); }
+.twin-stat { padding: 4px 2px; border-radius: 6px; background: var(--tile-bg); }
+.twin-svg { display: block; width: 100%; height: auto; }
+.twin-svg.is-large { border-radius: var(--tile-radius); border: 1px solid var(--color-border); }
+.twin-sky { fill: var(--color-surface); }
+.twin-drop { stroke: var(--chart-6); stroke-width: 1.2; stroke-linecap: round; opacity: 0.7; animation: twin-rain 0.9s linear infinite; }
+@keyframes twin-rain { from { transform: translateY(-6px); opacity: 0; } 30% { opacity: 0.75; } to { transform: translateY(10px); opacity: 0; } }
+.twin-ground { fill: var(--color-surface-raised); stroke: var(--color-border-strong); stroke-width: 1; }
+.twin-road { fill: var(--color-neutral); opacity: 0.55; }
+.twin-house rect, .twin-house polygon { fill: var(--color-surface); stroke: var(--color-text-faint); stroke-width: 1; }
+.twin-house .twin-door { fill: var(--color-text-faint); stroke: none; }
+.twin-barrier rect { fill: var(--color-warning); }
+.twin-barrier line { stroke: var(--color-warning); stroke-width: 1.5; }
+.twin-water { fill: var(--chart-6); fill-opacity: 0.55; }
+.twin-water.is-flood { fill: var(--color-danger); fill-opacity: 0.35; stroke: var(--color-danger); stroke-width: 0.8; }
+.twin-threshold { stroke: var(--color-danger); stroke-dasharray: 3 3; stroke-width: 0.8; opacity: 0.6; }
+.twin-label { font: 600 8.5px var(--font-sans); fill: var(--color-text-faint); }
+.twin-label.is-strong { fill: var(--color-text-muted); }
+.twin-label.is-danger { fill: var(--color-danger); }
+.twin-trench { fill: none; stroke: var(--color-text-faint); stroke-width: 1.2; }
+.twin-sensor { fill: var(--color-primary); }
+.twin-pipe { fill: var(--color-border-strong); }
+.twin-flow { stroke: var(--chart-6); stroke-width: 2; fill: none; stroke-dasharray: 5 5; animation: twin-flow 0.8s linear infinite; }
+@keyframes twin-flow { to { stroke-dashoffset: -10; } }
+.twin-gate { stroke: var(--color-surface); stroke-width: 1; }
+.tone-fill-success { fill: var(--color-success); }
+.tone-fill-info { fill: var(--color-info); }
+.tone-fill-warning { fill: var(--color-warning); }
+.tone-fill-danger { fill: var(--color-danger); }
+.twin-sea { fill: var(--chart-6); fill-opacity: 0.4; }
+.twin-basin { fill: none; stroke: var(--color-border-strong); stroke-width: 1; }
+.twin-invert { stroke: var(--color-text-faint); stroke-dasharray: 2 2; stroke-width: 1; }
+.twin-gauge { fill: none; stroke: var(--color-border-strong); stroke-width: 1; }
+.twin-river { fill: var(--chart-3); fill-opacity: 0.6; }
+.twin-river.is-over { fill: var(--color-danger); }
+.twin-pump rect { fill: var(--color-primary); }
+.twin-pump text { font: 800 8.5px var(--font-sans); fill: var(--color-on-primary); }
+.twin-pump path { fill: none; stroke: var(--color-primary); stroke-width: 1.6; }
+.twin-pump path.twin-flow { stroke: var(--chart-6); }
+@media (prefers-reduced-motion: reduce) {
+  .twin-drop, .twin-flow, .flooding-chip, .risk-marker-pulse { animation: none; }
+}
+.phone-exercise { margin: 0 auto 8px; width: fit-content; padding: 3px 10px; border-radius: 999px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.08em; color: #1c1c20; background: #f59e0b; }
+.sensor-tile-chevron { position: absolute; top: 10px; right: 8px; color: var(--color-text-faint); }
+
+/* 3D twin and simulated CCTV (src/twin3d) */
+.twin3d-canvas { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; background: #15181c; }
+.twin3d-canvas.is-interactive { cursor: grab; touch-action: none; }
+.twin3d-canvas.is-interactive:active { cursor: grabbing; }
+.twin3d-orbit { position: relative; overflow: hidden; border-radius: var(--tile-radius); border: 1px solid var(--color-border); }
+.twin3d-tag { position: absolute; left: 0; top: 0; margin-top: -6px; pointer-events: none; white-space: nowrap; font: 700 10.5px var(--font-sans); padding: 2px 8px; border-radius: 999px; color: #fff; background: rgba(17, 20, 24, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); transition: opacity 0.2s ease; }
+.twin3d-tag.tone-danger { background: color-mix(in srgb, var(--color-danger) 88%, black); }
+.twin3d-tag.tone-warning { background: color-mix(in srgb, var(--color-warning) 80%, black); }
+.twin3d-tag.tone-success { background: color-mix(in srgb, var(--color-success) 75%, black); }
+.twin3d-tag.tone-info { background: color-mix(in srgb, var(--color-info) 80%, black); }
+.twin3d-tag.tone-primary { background: color-mix(in srgb, var(--color-primary) 85%, black); }
+.twin3d-loading { width: 100%; aspect-ratio: 16 / 9; background: linear-gradient(90deg, var(--tile-bg), var(--color-surface-raised), var(--tile-bg)); background-size: 200% 100%; animation: twin3d-shimmer 1.4s linear infinite; }
+@keyframes twin3d-shimmer { to { background-position: -200% 0; } }
+.twin3d-fallback { width: 100%; aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--color-text-faint); background: var(--tile-bg); }
+.twin-thumb { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); margin: 8px 0; }
+.cctv-canvas { border-radius: 6px; overflow: hidden; }
+.twin-card .cctv-canvas { border-radius: 0; margin-bottom: 0; }
+.chip-btn { font: 600 11px var(--font-sans); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--tile-bg); color: var(--color-text-muted); cursor: pointer; }
+.chip-btn:hover { border-color: var(--color-primary-border); color: var(--color-text); }
+.chip-btn.is-active { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary); }
+@media (prefers-reduced-motion: reduce) { .twin3d-loading { animation: none; } }

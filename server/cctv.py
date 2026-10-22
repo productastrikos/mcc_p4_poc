@@ -1,18 +1,17 @@
-"""CCTV water-level check: sample frames, offline classifier and risk fusion.
+"""CCTV water-level check: offline classifier and risk fusion.
 
 With an Anthropic API key, frames are classified by Claude vision (llm.py).
-Without one, a colour heuristic estimates how much of the frame is muddy
-flood water. It is only a stand-in for demos and is labelled as such.
+Without one, a heuristic reads the flood depth staff when one is in view and
+estimates how much of the frame is muddy flood water. It is only a stand-in
+for demos and is labelled as such.
 """
 import base64
 import io
-import math
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image
 
 from . import llm
-from .config import CCTV_DIR
 
 # How strongly a CCTV reading moves the forecast, as likelihood ratios per horizon.
 CCTV_LR = {
@@ -41,14 +40,167 @@ def fuse(probs: dict, reading: dict) -> dict:
 
 
 # ─── Offline heuristic ────────────────────────────────────────────────────
-def heuristic_classify(img: Image.Image) -> dict:
+GAUGE_CM = 100      # flood gauge staff: 1 m in 10 cm bands, red on the odd decimetres, red at the top
+RISING_FRAC = 0.03  # muddy share of the lower frame that means the drain is running near the rim
+
+
+def muddy_fraction(img: Image.Image) -> float:
     """Share of muddy-water pixels in the lower part of the frame."""
     small = img.convert("RGB").resize((240, 135))
     hsv = np.asarray(small.convert("HSV"), dtype=float) / 255.0
-    lower = hsv[int(135 * 0.35):]
+    lower = hsv[int(135 * 0.35):int(135 * 0.92)]
     h, s, v = lower[..., 0] * 360, lower[..., 1], lower[..., 2]
-    muddy = (h >= 18) & (h <= 52) & (s >= 0.18) & (s <= 0.8) & (v >= 0.22) & (v <= 0.8)
-    frac = float(muddy.mean())
+    muddy = (h >= 18) & (h <= 52) & (s >= 0.18) & (s <= 0.8) & (v >= 0.15) & (v <= 0.85)
+    return float(muddy.mean())
+
+
+def _runs(labels):
+    """Run-length encode a 1-D label array: [(label, start, length)]."""
+    starts = np.concatenate(([0], np.flatnonzero(np.diff(labels)) + 1))
+    lengths = np.diff(np.concatenate((starts, [len(labels)])))
+    return [(int(labels[s]), int(s), int(n)) for s, n in zip(starts, lengths)]
+
+
+def _staff_profile(col):
+    """Bands down one staff profile (0 other, 1 red, 2 white): (bands, pitch, top) or None.
+
+    bands are (start, length) runs alternating red and white from the red top
+    band down to where neither colour continues (water or road).
+    """
+    runs = _runs(col)
+    reds = [n for lab, _, n in runs if lab == 1 and n >= 3]
+    if len(reds) < 2:
+        return None
+    band = float(np.median(reds))
+    # Absorb blips shorter than half a band (blurred band edges, rain streaks).
+    merged = []
+    for lab, st, n in runs:
+        if merged and (n < band * 0.45 or lab == merged[-1][0]):
+            plab, pst, pn = merged[-1]
+            merged[-1] = (plab, pst, pn + n)
+        else:
+            merged.append((lab, st, n))
+    best = None
+    for i0, (lab0, _, n0) in enumerate(merged):
+        if lab0 != 1 or n0 < band * 0.6:
+            continue
+        bands = []
+        for lab, st, n in merged[i0:]:
+            if lab == 0:
+                break
+            bands.append((st, n))
+        if len(bands) < 2 or (best and len(bands) <= len(best[0])):
+            continue
+        # Pitch and top from a line through the band tops. Each top is above the
+        # water whenever any of its band shows, and a colour threshold that
+        # shrinks red bands moves red and white tops opposite ways, so the fit
+        # cancels it.
+        tops = np.array([st for st, _ in bands], dtype=float)
+        if len(bands) >= 3:
+            pitch, top = np.polyfit(np.arange(len(bands)), tops, 1)
+        else:
+            pitch, top = tops[1] - tops[0], tops[0]
+        full = bands[:-1]   # every band but the last is whole
+        if pitch >= 3 and all(0.55 * pitch <= n <= 1.6 * pitch for _, n in full):
+            best = (bands, float(pitch), float(top))
+    return best
+
+
+def read_gauge(img: Image.Image):
+    """Read a red-and-white flood depth staff if one is in view.
+
+    Every column with repeated red runs is read for alternating red and white
+    bands. The staff is the widest group of neighbouring columns whose bands
+    start at the same height, so a red car, a sign or a diagonally striped
+    barrier is not mistaken for it. The visible length over the band pitch
+    gives the height above the water.
+    Returns {"depth_cm", "visible_cm", "band_px", "x"} or None.
+    """
+    im = img.convert("RGB")
+    if im.width > 1600:   # keep the staff's resolution; only shrink very large photos
+        im = im.resize((1600, round(im.height * 1600 / im.width)))
+    rgb = np.asarray(im, dtype=np.int16)
+    H, W, _ = rgb.shape
+    y0, y1 = int(H * 0.12), int(H * 0.94)          # skip the burned-in camera text
+    r, g, b = rgb[y0:y1, :, 0], rgb[y0:y1, :, 1], rgb[y0:y1, :, 2]
+    # Colour ratios rather than fixed levels, so a dim morning or a lamp-lit staff still reads.
+    red = (r > 60) & (r > 2 * g) & (r > 1.6 * b) & (r - g > 40)
+    white = (r > 110) & (g > 110) & (b > 100) & (np.abs(r - g) < 40) & (np.abs(g - b) < 40)
+
+    # Red runs at least 3 px tall, counted per column.
+    red3 = red[:-2] & red[1:-1] & red[2:]
+    starts = (red3[1:] & ~red3[:-1]).sum(axis=0) + red3[0]
+    cols = []   # (x, top, n_bands, visible_cm, pitch, clean) per column that reads as a staff
+    for x in np.flatnonzero(starts >= 2):
+        sr, sw = red[:, max(0, x - 1):x + 2], white[:, max(0, x - 1):x + 2]
+        n_red, n_white = sr.sum(axis=1), sw.sum(axis=1)
+        n_other = sr.shape[1] - n_red - n_white
+        col = np.select([(n_red >= n_white) & (n_red > n_other), n_white > n_other], [1, 2], 0).astype(np.int8)
+        found = _staff_profile(col)
+        if found:
+            bands, pitch, top = found
+            # A band is never longer than the pitch: anything more is a glint or
+            # the staff's reflection on the water just below it.
+            last = bands[-1][1]
+            visible = 10.0 * (bands[-1][0] + min(last, pitch) - top) / pitch
+            cols.append((int(x), bands[0][0], len(bands), visible, pitch, last <= 1.15 * pitch))
+    # Group neighbouring columns (gaps of one allowed) whose top band starts within 2 px.
+    groups = []
+    for c in cols:
+        g = groups[-1] if groups else None
+        if g and c[0] - g[-1][0] <= 2 and abs(c[1] - g[0][1]) <= 2:
+            g.append(c)
+        else:
+            groups.append([c])
+    if not groups:
+        return None
+    staff = max(groups, key=lambda g: (len(g), max(c[2] for c in g)))
+    if len(staff) < 3:
+        return None
+    n_max = max(c[2] for c in staff)
+    core = [c for c in staff if c[2] == n_max]   # edge columns blur into the background
+    core = [c for c in core if c[5]] or core      # columns without a glint at the waterline
+    visible = min(float(GAUGE_CM), float(np.median([c[3] for c in core])))
+    pitch = float(np.median([c[4] for c in core]))
+    if visible < 15:   # too little staff to trust
+        return None
+    depth = max(0.0, GAUGE_CM - visible)
+    if depth < 3:   # within the reading error of a band edge
+        depth = 0.0
+    x = (staff[0][0] + staff[-1][0]) // 2
+    return {"depth_cm": round(depth), "visible_cm": round(visible), "band_px": round(pitch, 1), "x": x}
+
+
+def heuristic_classify(img: Image.Image) -> dict:
+    """Offline stand-in for the vision model.
+
+    With a flood gauge staff in view, the depth is read from the staff. Without
+    one (most uploaded photos), the share of muddy-water pixels decides.
+    """
+    frac = muddy_fraction(img)
+    gauge = read_gauge(img)
+    if gauge:
+        depth = gauge["depth_cm"]
+        if depth >= 10:
+            status, conf = "Road Flooded", 0.85
+        elif depth >= 1:
+            status, conf = "Overflowing", 0.75
+        elif frac >= RISING_FRAC:
+            status, conf = "Rising", 0.65
+        else:
+            status, conf = "Normal", 0.75
+        observations = (
+            f"Offline image check: the flood gauge staff shows about {gauge['visible_cm']} cm above the water, "
+            f"so about {depth} cm of water at the road edge. About {frac:.0%} of the lower frame looks like muddy water."
+            if depth else
+            f"Offline image check: the whole flood gauge staff is clear of the water. About {frac:.0%} of the lower "
+            "frame looks like muddy water" + (", so the drain is running near its rim." if frac >= RISING_FRAC else ".")
+        )
+        return {
+            "status": status, "depth_cm": float(depth), "confidence": conf, "observations": observations,
+            "depth_references": ["flood gauge staff (10 cm bands)"], "is_drain_or_road_scene": True,
+            "engine": "offline heuristic", "muddy_fraction": round(frac, 3), "gauge": gauge,
+        }
     # Confidence grows with distance from the class boundaries.
     if frac < 0.035:
         status, depth, conf = "Normal", 0.0, 0.75 if frac < 0.02 else 0.6
@@ -60,7 +212,7 @@ def heuristic_classify(img: Image.Image) -> dict:
         status, depth, conf = "Road Flooded", round(min(80, 15 + (frac - 0.26) * 60), 0), min(0.9, 0.6 + (frac - 0.26))
     return {
         "status": status, "depth_cm": depth, "confidence": round(conf, 2),
-        "observations": f"Offline colour check: about {frac:.0%} of the lower frame looks like muddy flood water.",
+        "observations": f"Offline colour check: about {frac:.0%} of the lower frame looks like muddy flood water (no depth gauge in view).",
         "depth_references": [], "is_drain_or_road_scene": True,
         "engine": "offline heuristic", "muddy_fraction": round(frac, 3),
     }
@@ -93,141 +245,7 @@ def analyze(image_b64: str, hotspot: dict) -> dict:
     return heuristic_classify(img)
 
 
-# ─── Sample frames ────────────────────────────────────────────────────────
-SAMPLES = [
-    ("normal", "Normal", "Drain at normal level"),
-    ("rising", "Rising", "Drain running high"),
-    ("overflowing", "Overflowing", "Drain overflowing onto road"),
-    ("flooded", "Road Flooded", "Road flooded"),
-]
-
-WATER = (118, 96, 62)
-WATER_LIGHT = (150, 126, 86)
-
-
-def _font(size):
-    for name in ("consola.ttf", "DejaVuSansMono.ttf", "cour.ttf"):
-        try:
-            return ImageFont.truetype(name, size)
-        except OSError:
-            continue
-    return ImageFont.load_default()
-
-
-def _lerp(a, b, t):
-    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
-
-
-def _frame(kind: str, seed: int) -> Image.Image:
-    W, H = 960, 540
-    rng = np.random.default_rng(seed)
-    img = Image.new("RGB", (W, H))
-    d = ImageDraw.Draw(img)
-    hz = 200   # horizon
-
-    for y in range(hz):   # overcast sky
-        c = int(150 + 40 * y / hz)
-        d.line([(0, y), (W, y)], fill=(c - 10, c - 4, c + 4))
-    x = 0
-    while x < W:   # shophouses on the horizon
-        w = int(rng.integers(70, 140)); h = int(rng.integers(40, 95))
-        tone = int(rng.integers(120, 175))
-        d.rectangle([x, hz - h, x + w, hz], fill=(tone, tone - 6, tone - 14))
-        for wy in range(hz - h + 10, hz - 8, 16):
-            for wx in range(x + 8, x + w - 10, 18):
-                d.rectangle([wx, wy, wx + 8, wy + 7], fill=(tone - 45, tone - 40, tone - 30))
-        x += w + int(rng.integers(0, 12))
-
-    d.rectangle([0, hz, W, H], fill=(92, 108, 74))                           # verge
-    vp = (575, hz)
-    road = [(250, H), (W, H), (_lerp((W, H), vp, 0.97)), (_lerp((250, H), vp, 0.97))]
-    wet = kind in ("overflowing", "flooded")
-    d.polygon(road, fill=(70, 72, 76) if wet else (96, 98, 102))
-    for i in range(10):   # lane markings
-        t0, t1 = i / 10, i / 10 + 0.045
-        a, b = _lerp((610, H), vp, t0), _lerp((610, H), vp, t1)
-        d.line([a, b], fill=(205, 205, 190), width=max(1, int(9 * (1 - t0))))
-    kerb_outer = [(205, H), (250, H), _lerp((250, H), vp, 0.97), _lerp((205, H), vp, 0.97)]
-    d.polygon(kerb_outer, fill=(178, 176, 168))
-    drain_l, drain_r = (30, H), (205, H)
-    drain = [drain_l, drain_r, _lerp(drain_r, vp, 0.97), _lerp(drain_l, vp, 0.97)]
-    d.polygon(drain, fill=(58, 60, 58))
-    inner_l, inner_r = (62, H), (178, H)
-    d.polygon([inner_l, inner_r, _lerp(inner_r, vp, 0.97), _lerp(inner_l, vp, 0.97)], fill=(40, 42, 42))
-
-    water_level = {"normal": 0.18, "rising": 0.82, "overflowing": 1.0, "flooded": 1.0}[kind]
-    cx_l = lambda t: _lerp(inner_l, vp, t)  # noqa: E731
-    cx_r = lambda t: _lerp(inner_r, vp, t)  # noqa: E731
-    # Water in the channel: a band centred in the drain whose width tracks the level.
-    poly_l, poly_r = [], []
-    for k in range(21):
-        t = 0.97 * k / 20
-        l, r = cx_l(t), cx_r(t)
-        mid = (l[0] + r[0]) / 2
-        half = (r[0] - l[0]) / 2 * water_level
-        poly_l.append((mid - half, l[1])); poly_r.append((mid + half, r[1]))
-    d.polygon(poly_l + poly_r[::-1], fill=WATER)
-    for k in range(18):   # flow streaks
-        t = rng.uniform(0, 0.9); l, r = cx_l(t), cx_r(t)
-        mid = (l[0] + r[0]) / 2; half = (r[0] - l[0]) / 2 * water_level * 0.8
-        xx = mid + rng.uniform(-half, half)
-        d.line([(xx, l[1]), (xx + rng.uniform(-6, 6), l[1] - 14 * (1 - t))], fill=WATER_LIGHT, width=2)
-
-    if kind == "overflowing":
-        pts = []
-        for k in range(26):   # spill fanning onto the road edge
-            t = 0.95 * k / 25
-            a = _lerp((205, H), vp, t)
-            pts.append((a[0] + (1 - t) * (90 + 40 * math.sin(k * 1.3)), a[1]))
-        d.polygon([_lerp(drain_l, vp, 0.0)] + pts + [_lerp((205, H), vp, 0.95), _lerp(drain_l, vp, 0.95)], fill=WATER)
-    if kind == "flooded":
-        d.polygon([(0, H), (W, H), (W, hz + 70), (0, hz + 45)], fill=WATER)
-        for k in range(60):
-            y = int(rng.uniform(hz + 55, H)); x0 = rng.uniform(0, W)
-            ln = rng.uniform(20, 90) * (y - hz) / (H - hz)
-            d.line([(x0, y), (x0 + ln, y)], fill=WATER_LIGHT, width=2)
-        # Half-submerged car and a depth gauge.
-        d.rounded_rectangle([640, 300, 820, 368], radius=18, fill=(150, 30, 34))
-        d.rounded_rectangle([668, 262, 790, 306], radius=14, fill=(120, 24, 28))
-        d.rectangle([684, 270, 728, 300], fill=(150, 170, 182)); d.rectangle([736, 270, 778, 300], fill=(150, 170, 182))
-        d.polygon([(600, 345), (860, 352), (860, 372), (600, 368)], fill=WATER)
-        d.rectangle([420, 230, 428, 420], fill=(210, 210, 210))
-        for k, y in enumerate(range(300, 420, 16)):
-            d.rectangle([420, y, 428, y + 8], fill=(200, 40, 40) if k % 2 == 0 else (235, 235, 235))
-        d.polygon([(380, 395), (470, 395), (470, 420), (380, 420)], fill=WATER)
-
-    d.rectangle([880, 140, 892, 330], fill=(120, 124, 128))   # lamp post
-    d.line([(886, 145), (840, 128)], fill=(120, 124, 128), width=6)
-
-    # CCTV look: soften, desaturate, noise, vignette, overlay text.
-    img = img.filter(ImageFilter.GaussianBlur(1.1))
-    arr = np.asarray(img, dtype=float)
-    gray = arr.mean(axis=2, keepdims=True)
-    arr = gray + (arr - gray) * 0.72
-    arr += rng.normal(0, 6, arr.shape)
-    yy, xx = np.mgrid[0:H, 0:W]
-    vig = 1 - 0.35 * (((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) / 2
-    arr = np.clip(arr * vig[..., None], 0, 255).astype(np.uint8)
-    img = Image.fromarray(arr)
-    d = ImageDraw.Draw(img)
-    f = _font(20)
-    d.rectangle([0, 0, W, 30], fill=(0, 0, 0))
-    d.text((10, 5), f"MSCCC DEMO CAM   SAMPLE FRAME: {kind.upper()}", fill=(235, 235, 235), font=f)
-    d.text((W - 210, H - 30), "SYNTHETIC IMAGE", fill=(240, 240, 240), font=f)
-    return img
-
-
-def ensure_samples():
-    out = []
-    for i, (key, status, label) in enumerate(SAMPLES):
-        path = CCTV_DIR / f"sample-{key}.jpg"
-        if not path.exists():
-            _frame(key, seed=100 + i).save(path, "JPEG", quality=86)
-        out.append({"key": key, "label": label, "expected": status, "url": f"/api/static/cctv/{path.name}"})
-    return out
-
-
 if __name__ == "__main__":
-    for s in ensure_samples():
-        img = Image.open(CCTV_DIR / s["url"].rsplit("/", 1)[-1])
-        print(s["key"], heuristic_classify(img))
+    import sys
+    for path in sys.argv[1:]:
+        print(path, heuristic_classify(Image.open(path)))

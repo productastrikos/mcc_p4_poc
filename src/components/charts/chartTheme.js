@@ -92,14 +92,16 @@ export function legendOptions(show, position = 'top') {
   };
 }
 
-export function axisOptions({ yMax, yLabel, stacked = false, grid = false } = {}) {
+export function axisOptions({ yMax, ySuggestedMax, xMaxTicks, yLabel, stacked = false, grid = false } = {}) {
   const tick = { color: cssVar('--chart-tick'), font: { size: 9 } };
   const gridCfg = grid ? { color: cssVar('--chart-grid') } : { display: false };
+  const xTick = xMaxTicks ? { ...tick, maxRotation: 0, autoSkip: true, maxTicksLimit: xMaxTicks } : tick;
   return {
-    x: { stacked, grid: { display: false }, ticks: tick },
+    x: { stacked, grid: { display: false }, ticks: xTick },
     y: {
       stacked, grid: gridCfg, ticks: tick, beginAtZero: true,
       ...(yMax != null ? { max: yMax } : {}),
+      ...(ySuggestedMax != null ? { suggestedMax: ySuggestedMax } : {}),
       ...(yLabel ? { title: { display: true, text: yLabel, color: cssVar('--chart-tick'), font: { size: 9 } } } : {}),
     },
   };

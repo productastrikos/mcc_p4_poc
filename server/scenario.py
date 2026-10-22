@@ -35,7 +35,8 @@ def run_episode(rain_mmhr, duration_h, tide_peak, hours_to_high, antecedent_mm=0
         f3, f6 = make_forecasts(local, rng)
         out[hp["id"]] = {
             "rel": rel,
-            "X": feature_matrix(hp, rel.astype(float), local, f3, f6, tide_obs, highs_h, highs_z, river_obs, drain_obs),
+            "X": feature_matrix(hp, rel.astype(float), local, f3, f6, tide_obs, highs_h, highs_z, river_obs, drain_obs,
+                                np.round(depth, 1)),
             "Y": label_matrix(flooded(depth)),
             "rain": local, "drain": drain_obs, "depth": depth, "tide": tide_obs, "river": river_obs,
         }

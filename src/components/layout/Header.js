@@ -5,7 +5,9 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { useData } from '../../data/DataProvider';
 import { NAV_SECTIONS, ROUTES, SEARCH_EXTRAS } from '../../routes';
 import { APP, USER } from '../../config';
-import { initials } from '../../utils';
+import { initials, mytClock } from '../../utils';
+import SitrepModal from './SitrepModal';
+import { ProfileModal, SignOutModal } from './OperatorGate';
 
 // Closes a popup when clicking outside `ref` or pressing Escape.
 function useDismiss(ref, open, onClose) {
@@ -89,6 +91,7 @@ function Search() {
   );
 }
 
+/** Real Malaysia time (the command centre's clock), whatever the browser's time zone. */
 function Clock() {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -96,16 +99,19 @@ function Clock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <span className="hidden md:inline-block font-mono text-xs text-fg-muted px-2 py-1 rounded-md border bg-surface-raised">
-      {now.toLocaleTimeString(APP.locale, { hour12: false })}
+    <span className="hidden md:inline-flex items-center gap-1.5 font-mono text-xs text-fg-muted px-2 py-1 rounded-md border bg-surface-raised"
+      title="Real time in Miri (Malaysia time, UTC+8)">
+      {mytClock(now)}<span className="text-[9px] font-sans font-bold tracking-wider text-fg-faint">MYT</span>
     </span>
   );
 }
 
-function ProfileMenu({ onOpenNotifications }) {
+function ProfileMenu({ onOpenNotifications, onProfile, onSignOut, onSitrep }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { toggleTheme } = useTheme();
+  const { operator } = useData();
+  const user = operator || USER;
   useDismiss(ref, open, () => setOpen(false));
 
   const item = (icon, label, onClick) => (
@@ -116,25 +122,26 @@ function ProfileMenu({ onOpenNotifications }) {
 
   return (
     <div className="relative" ref={ref}>
-      <button type="button" className="avatar" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title={USER.name}>
-        {initials(USER.name)}
+      <button type="button" className="avatar" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title={user.name}>
+        {initials(user.name)}
       </button>
       {open && (
         <div className="menu right-0" role="menu">
           <div className="flex items-center gap-3 px-4 py-3 border-b">
-            <div className="avatar">{initials(USER.name)}</div>
+            <div className="avatar">{initials(user.name)}</div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-fg truncate">{USER.name}</p>
-              <p className="text-[10px] text-fg-faint">{USER.role}</p>
+              <p className="text-xs font-bold text-fg truncate">{user.name}</p>
+              <p className="text-[10px] text-fg-faint">{user.role}</p>
             </div>
           </div>
           <div className="menu-section">
-            {item('user', 'Profile')}
+            {item('user', 'Profile and shift', onProfile)}
+            {item('clipboard', 'Situation report (SITREP)', onSitrep)}
             {item('bell', 'Notifications', onOpenNotifications)}
             {item('settings', 'Toggle theme', toggleTheme)}
           </div>
           <div className="menu-section">
-            {item('logout', 'Sign out')}
+            {item('logout', 'Sign out', onSignOut)}
           </div>
         </div>
       )}
@@ -146,6 +153,7 @@ export default function Header({ onToggleSidebar, activePanel, onTogglePanel }) 
   const { pathname } = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { notifications } = useData();
+  const [modal, setModal] = useState(null);   // 'profile' | 'signout' | 'sitrep'
   const f = APP.features;
 
   const unread = notifications.filter((n) => !n.read);
@@ -169,6 +177,10 @@ export default function Header({ onToggleSidebar, activePanel, onTogglePanel }) 
         <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`} onClick={toggleTheme} />
       )}
 
+      <Button variant="secondary" icon="clipboard" onClick={() => setModal('sitrep')} title="Situation report for handover and JPBD Miri">
+        <span className="hidden lg:inline">SITREP</span>
+      </Button>
+
       {f.insights && (
         <Button variant="accent" icon="sparkles" onClick={() => onTogglePanel('insights')} aria-pressed={activePanel === 'insights'}>
           <span className="hidden md:inline">AI Briefing</span>
@@ -183,7 +195,13 @@ export default function Header({ onToggleSidebar, activePanel, onTogglePanel }) 
         </IconButton>
       )}
 
-      <ProfileMenu onOpenNotifications={() => activePanel !== 'notifications' && onTogglePanel('notifications')} />
+      <ProfileMenu
+        onOpenNotifications={() => activePanel !== 'notifications' && onTogglePanel('notifications')}
+        onProfile={() => setModal('profile')} onSignOut={() => setModal('signout')} onSitrep={() => setModal('sitrep')}
+      />
+      {modal === 'sitrep' && <SitrepModal onClose={() => setModal(null)} />}
+      {modal === 'profile' && <ProfileModal onClose={() => setModal(null)} />}
+      {modal === 'signout' && <SignOutModal onClose={() => setModal(null)} />}
     </header>
   );
 }

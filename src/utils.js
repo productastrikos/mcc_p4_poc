@@ -54,6 +54,9 @@ export const LEVEL_RANK = { Normal: 0, Watch: 1, Warning: 2, Danger: 3 };
 export const levelFor = (p) => [...LEVELS].reverse().find((l) => (p ?? 0) >= l.min) || LEVELS[0];
 export const levelTone = (name) => (LEVELS.find((l) => l.name === name) || LEVELS[0]).tone;
 
+/** Level the operator sees, with the reason when flooding is observed rather than forecast. */
+export const levelReason = (a) => (a?.flooding_now ? 'Flooding now' : null);
+
 export const MECHANISMS = {
   'Tidal Backflow':    { icon: 'route',   blurb: 'High tide blocks drain outfalls, so rainwater backs up onto roads.' },
   'Rainfall Overload': { icon: 'bolt',    blurb: 'Rain falls faster than the drains can carry it away.' },
@@ -61,15 +64,75 @@ export const MECHANISMS = {
   'Combined':          { icon: 'alert',   blurb: 'Several mechanisms at once: heavy rain with high tide and/or a high river.' },
 };
 
-export const pct = (p, digits = 0) => (p == null ? '–' : `${(p * 100).toFixed(digits)}%`);
+/** Probability or share as a percent. Whole percents round down, so 49.6% shows as 49%
+    and never looks like the next level up. */
+export const pct = (p, digits = 0) => {
+  if (p == null) return '–';
+  if (digits === 0) return `${Math.floor(p * 100 + 1e-9)}%`;
+  return `${(p * 100).toFixed(digits)}%`;
+};
 
-/** '2026-10-17T14:00:00' → '14:00' (sensor clock is Malaysia time, stored without a zone). */
+/* ─── Time ──────────────────────────────────────────────────────────────
+   Sensor times are Malaysia time (MYT, UTC+8) stored without a zone, so they
+   are shown as written. Wall-clock stamps from the server carry +08:00 and
+   are shown in MYT whatever the browser's own time zone is. */
+export const TZ = 'Asia/Kuching';
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** '2026-10-17T14:00:00' or '…T14:00:00+08:00' → '14:00'. */
 export const hhmm = (iso) => (iso ? iso.slice(11, 16) : '');
+/** '2026-10-17T14:00:00' → '17 Oct 14:00'. */
 export const dayTime = (iso) => {
   if (!iso) return '';
-  const d = new Date(iso);
-  return `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} ${iso.slice(11, 16)}`;
+  return `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]} ${iso.slice(11, 16)}`;
 };
+/** '2026-10-17T14:00:00' → 'Saturday 17 October' (date part only, no time-zone shift). */
+export const longDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)));
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${d.toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' })}`;
+};
+/** Current Malaysia time as 'HH:MM:SS'. */
+export const mytClock = (date = new Date()) => date.toLocaleTimeString('en-GB', { timeZone: TZ, hour12: false });
+/** Hours from sensor time `a` to `b` (both naive MYT ISO strings). */
+export const hoursBetween = (a, b) => (Date.parse(`${b.slice(0, 19)}Z`) - Date.parse(`${a.slice(0, 19)}Z`)) / 3600000;
+/** Sensor time plus h hours, as a naive ISO string. */
+export const addHours = (iso, h) => new Date(Date.parse(`${iso.slice(0, 19)}Z`) + h * 3600000).toISOString().slice(0, 19);
+
+/** Feed sources: live data and the three kinds of exercise. */
+export const SOURCE_LABEL = { live: 'Live', drill: 'Exercise: storm drill', replay: 'Exercise: event replay', simulator: 'Exercise: simulator' };
+export const KIND_LABEL = { warning: 'Warning', watch: 'Watch advisory', all_clear: 'All-clear' };
+export const ALERT_STATUS = {
+  drafting:   { tone: 'accent',  label: 'Drafting' },
+  pending:    { tone: 'warning', label: 'Awaiting approval' },
+  sent:       { tone: 'success', label: 'Sent' },
+  approved:   { tone: 'success', label: 'Approved (exercise)' },
+  rejected:   { tone: 'neutral', label: 'Rejected' },
+  superseded: { tone: 'neutral', label: 'Superseded' },
+  expired:    { tone: 'neutral', label: 'Expired' },
+};
+
+/** Water depth in whole cm, rounded down so 9.6 cm never reads as the 10 cm flood depth. */
+export const cm = (v) => (v == null ? '–' : `${Math.floor(v + 1e-9)} cm`);
+export const FLOOD_DEPTH_CM = 10;
+export const RIVER_ALERT_M = 2.8;
+export const HIGH_TIDE_M = 2.0;
+
+/* Outfall blocking, the same formula as server/physics.py outfall_factors. */
+const clip01 = (v) => Math.min(1, Math.max(0, v));
+export function outfallBlocking(h, tide, river) {
+  const tideBlock = h.tide_sens * clip01((tide - h.outfall) / 0.8);
+  const riverBlock = h.river_sens * clip01((river - (h.bank - 1.3)) / 1.3);
+  return { tide: Math.round(tideBlock * 100), river: Math.round(riverBlock * 100) };
+}
+export function outfallState(block) {
+  if (block.tide >= 70) return 'Tide-locked';
+  if (block.tide >= 10) return 'Partly tide-locked';
+  if (block.river >= 10) return 'River backwater';
+  return 'Free-flowing';
+}
+export const OUTFALL_TONE = { 'Free-flowing': 'success', 'River backwater': 'info', 'Partly tide-locked': 'warning', 'Tide-locked': 'danger' };
 export const fmtHours = (h) => {
   if (h == null) return '';
   const m = Math.round(h * 60);

@@ -100,13 +100,39 @@ def drain_base_pct(hp, tide, river):
             + 25.0 * hp["river_sens"] * _clip01((river - 1.5) / 1.8))
 
 
-def step(hp, S, D, rain, rain_prev, tide, river):
-    """Advance one hotspot by one hour. Returns (S, D, drain_pct)."""
-    base = drain_base_pct(hp, tide, river)
-    avail = hp["storage"] * (1 - base / 100.0)
+def outfall_factors(hp, tide, river):
+    """Share of the outfall's capacity left by the tide and by river backwater (1 = free-flowing)."""
     f_tide = 1 - hp["tide_sens"] * _clip01((tide - hp["outfall"]) / 0.8)
     f_river = 1 - hp["river_sens"] * _clip01((river - (hp["bank"] - 1.3)) / 1.3)
-    q = hp["capacity"] * max(0.06, f_tide * f_river)
+    return f_tide, f_river
+
+
+def hydraulics(hp, tide, river, pump=0.0):
+    """Drain and outfall state for given tide and river levels (used by the digital twin)."""
+    base = drain_base_pct(hp, tide, river)
+    f_tide, f_river = outfall_factors(hp, tide, river)
+    gravity = hp["capacity"] * max(0.06, f_tide * f_river)
+    return {
+        "backwater_pct": round(base, 1),
+        "tide_block_pct": round(100 * (1 - f_tide), 0),
+        "river_block_pct": round(100 * (1 - f_river), 0),
+        "gravity_mmhr": round(gravity, 1),
+        "pump_mmhr": round(pump, 1),
+        "capacity_mmhr": round(gravity + pump, 1),
+        "design_mmhr": hp["capacity"],
+        "storage_mm": round(hp["storage"] * (1 - base / 100.0), 1),
+    }
+
+
+def step(hp, S, D, rain, rain_prev, tide, river, pump=0.0):
+    """Advance one hotspot by one hour. Returns (S, D, drain_pct).
+
+    `pump` is extra discharge from mobile pumps (mm/h); it works whatever the tide.
+    """
+    base = drain_base_pct(hp, tide, river)
+    avail = hp["storage"] * (1 - base / 100.0)
+    f_tide, f_river = outfall_factors(hp, tide, river)
+    q = hp["capacity"] * max(0.06, f_tide * f_river) + pump
 
     S = S + hp["runoff"] * rain + hp["lag"] * rain_prev
     out = min(S, q)

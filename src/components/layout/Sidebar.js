@@ -4,6 +4,7 @@ import { Icon } from '../ui';
 import { NAV_SECTIONS } from '../../routes';
 import { APP, USER } from '../../config';
 import { initials } from '../../utils';
+import { useData } from '../../data/DataProvider';
 
 export function BrandMark() {
   return APP.logo
@@ -14,6 +15,12 @@ export function BrandMark() {
 export default function Sidebar({ collapsed }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { operator, pendingAlerts, live } = useData();
+  const user = operator || USER;
+  const badges = {
+    '/alerts': pendingAlerts.length || null,
+    '/twin': live?.incidents?.open?.length || null,
+  };
 
   return (
     <aside className={`sidebar ${collapsed ? 'is-collapsed' : ''}`}>
@@ -35,7 +42,8 @@ export default function Sidebar({ collapsed }) {
                 title={collapsed ? item.label : undefined}
               >
                 <Icon name={item.icon} size={18} />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && <span className="truncate flex-1">{item.label}</span>}
+                {badges[item.path] && <span className={`nav-badge ${collapsed ? 'is-dot' : ''}`}>{collapsed ? '' : badges[item.path]}</span>}
               </button>
             ))}
           </div>
@@ -44,10 +52,10 @@ export default function Sidebar({ collapsed }) {
 
       {!collapsed && (
         <div className="sidebar-user">
-          <div className="avatar" style={{ width: 30, height: 30, fontSize: 11, borderRadius: 8 }}>{initials(USER.name)}</div>
+          <div className="avatar" style={{ width: 30, height: 30, fontSize: 11, borderRadius: 8 }}>{initials(user.name)}</div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-fg truncate">{USER.name}</p>
-            <p className="text-[10px] text-fg-faint truncate">{USER.role}</p>
+            <p className="text-xs font-semibold text-fg truncate">{user.name}</p>
+            <p className="text-[10px] text-fg-faint truncate">{user.role}</p>
           </div>
         </div>
       )}

@@ -15,15 +15,17 @@ import HotspotDetail from './pages/HotspotDetail';
 import Simulator from './pages/Simulator';
 import AlertCentre from './pages/AlertCentre';
 import ModelPage from './pages/ModelPage';
+import DigitalTwin from './pages/DigitalTwin';
 
 export const NAV_SECTIONS = [
   {
     label: 'Operations',
     items: [
       { path: '/', label: 'Command Dashboard', icon: 'home', element: <Dashboard />, keywords: 'map live sensors forecast overview drill replay' },
+      { path: '/twin', label: 'Digital Twin', icon: 'layers', element: <DigitalTwin />, keywords: 'twin hydraulic drain outfall tide river pump projection replica network assets' },
       { path: '/hotspots', label: 'Hotspots', icon: 'pin', element: <Hotspots />, keywords: 'sites areas cctv drain' },
       { path: '/simulator', label: 'Scenario Simulator', icon: 'sliders', element: <Simulator />, keywords: 'what-if scenario storm tide plan' },
-      { path: '/alerts', label: 'Alert Centre', icon: 'bell', element: <AlertCentre />, keywords: 'warnings miri cares approval drafts checklist' },
+      { path: '/alerts', label: 'Alert Centre', icon: 'bell', element: <AlertCentre />, keywords: 'warnings miri cares approval drafts checklist advisory all-clear' },
     ],
   },
   {

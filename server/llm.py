@@ -130,9 +130,10 @@ def classify_cctv(image_b64: str, media_type: str, camera: str, hotspot_name: st
         "- Rising: drain more than about half full or flowing fast near the rim; road not covered.\n"
         "- Overflowing: water spilling over the drain edge onto the kerb or road shoulder; shallow sheet flow.\n"
         "- Road Flooded: standing or flowing water across the carriageway.\n\n"
-        "Estimate the water depth on the road in cm (0 if the road is not covered). Judge depth from visible "
-        "references such as kerbs (about 15 cm), wheel hubs (about 30 cm), the bottom of car doors (about 40 cm) "
-        "or a person's knees (about 50 cm). If the frame is not a drain or road scene, or is too dark or blurred "
+        "Estimate the water depth on the road in cm (0 if the road is not covered). If a flood depth gauge staff is "
+        "in view (MSCCC cameras have a 1 m red-and-white staff at the road edge, in 10 cm bands numbered in cm), read "
+        "the depth from it. Otherwise judge from references such as kerbs (about 15 cm), wheel hubs (about 30 cm), "
+        "the bottom of car doors (about 40 cm) or a person's knees (about 50 cm). If the frame is not a drain or road scene, or is too dark or blurred "
         "to judge, say so in the observations and give a low confidence."
     )
     content = [
@@ -193,15 +194,39 @@ OWNERS = [
 ]
 
 
+HEADINGS = {
+    "warning": "Start public_en with 'FLOOD WARNING' or 'FLOOD DANGER' to match the level, and public_ms with "
+               "'AMARAN BANJIR' or 'BAHAYA BANJIR'.",
+    "watch": "This is an advisory at Watch level, not a warning: start public_en with 'FLOOD WATCH' and public_ms with "
+             "'AWASAN BANJIR', and say flooding is possible rather than expected.",
+    "all_clear": "This is an all-clear after the flood risk has eased: start public_en with 'FLOOD ALL CLEAR' and public_ms "
+                 "with 'BANJIR SURUT'. Do not repeat the warning; tell residents to take care and report blocked drains. "
+                 "The checklist stands resources down (recall pumps, reopen roads, close the relief centre if opened).",
+}
+
+
 def draft_alert(context: dict) -> dict:
-    prompt = (
-        "Draft the public alert and the operator checklist for this forecast.\n\n"
+    kind = context.get("kind", "warning")
+    rules = [
         f"Hard limit: public_en and public_ms together must not exceed {ALERT_MAX_CHARS} characters "
-        "(aim for about 130 and 150). Start public_en with 'FLOOD WARNING' or 'FLOOD DANGER' to match the level, "
-        "and public_ms with 'AMARAN BANJIR' or 'BAHAYA BANJIR'.\n"
-        "Checklist: 4 to 7 items, most urgent first. Choose owners from: " + "; ".join(OWNERS) + ". "
-        "Include closing or diverting a named road and alerting the District Disaster Management Committee when the "
-        "level is Danger; at Warning, put them on standby instead.\n\n"
+        "(aim for about 130 and 150).",
+        HEADINGS.get(kind, HEADINGS["warning"]),
+    ]
+    if context.get("exercise"):
+        rules.append("This is an EXERCISE (storm drill, event replay or simulator scenario). Begin public_en with "
+                     "'[EXERCISE] ' and public_ms with '[LATIHAN] ' before the heading; the tags count toward the limit.")
+    if context.get("flooding_now"):
+        rules.append("Roads are already flooded (see water_on_road_cm): say flooding is happening now, not expected later.")
+    if kind == "warning":
+        rules.append("Checklist: 4 to 7 items, most urgent first. Include closing or diverting a named road and alerting "
+                     "the District Disaster Management Committee when the level is Danger; at Warning, put them on standby "
+                     "instead. Do not repeat actions already done (see response: pumps deployed, roads closed, relief open).")
+    else:
+        rules.append("Checklist: 3 to 5 items, most urgent first.")
+    prompt = (
+        "Draft the public alert and the operator checklist for this situation.\n\n"
+        + "\n".join(f"- {r}" for r in rules)
+        + "\n- Choose checklist owners from: " + "; ".join(OWNERS) + ".\n\n"
         f"<forecast_context>\n{json.dumps(context, indent=2, default=str)}\n</forecast_context>"
     )
     data, model = call_json(ALERT_SYSTEM, [{"type": "text", "text": prompt}], ALERT_SCHEMA, effort="medium", max_tokens=8000)

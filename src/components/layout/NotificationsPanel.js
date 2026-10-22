@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, IconButton } from '../ui';
+import { Badge, Icon, IconButton } from '../ui';
 import { useData } from '../../data/DataProvider';
-import { timeAgo } from '../../utils';
+import { hhmm, timeAgo } from '../../utils';
 
 const GROUPS = [
   { tone: 'danger',  label: 'Critical' },
@@ -10,17 +10,25 @@ const GROUPS = [
   { tone: 'info',    label: 'Info' },
 ];
 
+/** Unread items from the operations log. An item opens its alert or hotspot. */
 export default function NotificationsPanel({ onClose }) {
   const navigate = useNavigate();
   const { notifications, markRead, markAllRead } = useData();
   const unread = notifications.filter((n) => !n.read);
+
+  const open = (n) => {
+    markRead(n.id);
+    if (n.alertId) navigate(`/alerts?id=${n.alertId}`);
+    else if (n.hotspotId) navigate(`/hotspots/${n.hotspotId}`);
+    onClose();
+  };
 
   return (
     <aside className="side-panel w-80 max-w-full">
       <div className="panel-header">
         <div>
           <h3 className="text-sm font-semibold text-fg">Notifications</h3>
-          <p className="text-xs text-fg-faint">{unread.length} unread</p>
+          <p className="text-xs text-fg-faint">{unread.length} unread of {notifications.length} in the operations log</p>
         </div>
         <div className="flex items-center gap-2">
           {unread.length > 0 && <button type="button" className="link-btn" onClick={markAllRead}>MARK ALL READ</button>}
@@ -35,23 +43,32 @@ export default function NotificationsPanel({ onClose }) {
           return (
             <div key={tone} className="space-y-2">
               <Badge tone={tone} plain>{label.toUpperCase()} ({items.length})</Badge>
-              {items.map((n) => (
-                <div key={n.id} className={`tile tone-${tone}`}>
-                  <button type="button" className="text-left text-xs font-semibold text-fg hover:underline"
-                    onClick={() => { if (n.hotspotId) { navigate(`/hotspots/${n.hotspotId}`); onClose(); } }}>
-                    {n.title}
-                  </button>
-                  <p className="text-[11px] text-fg-muted mt-0.5">{n.message}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-[10px] text-fg-faint">{timeAgo(n.createdAt)} · sensor {n.simTime?.slice(11, 16)}</span>
-                    <button type="button" className="link-btn" onClick={() => markRead(n.id)}>MARK AS READ</button>
+              {items.map((n) => {
+                const target = n.alertId ? 'Open alert' : n.hotspotId ? 'Open hotspot' : null;
+                return (
+                  <div key={n.id} className={`tile tone-${tone}`}>
+                    {target ? (
+                      <button type="button" className="text-left text-xs font-semibold text-fg hover:underline flex items-start gap-1" onClick={() => open(n)} title={target}>
+                        {n.title}<Icon name="chevronRight" size={12} className="mt-0.5 shrink-0" />
+                      </button>
+                    ) : <p className="text-xs font-semibold text-fg">{n.title}</p>}
+                    <p className="text-[11px] text-fg-muted mt-0.5">{n.message}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-fg-faint">{timeAgo(n.createdAt)} · sensor {hhmm(n.simTime)}</span>
+                      <button type="button" className="link-btn" onClick={() => markRead(n.id)}>MARK AS READ</button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           );
         })}
-        {unread.length === 0 && <p className="text-center text-sm text-fg-faint py-8">You're all caught up</p>}
+        {unread.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-sm text-fg-faint">You're all caught up</p>
+            <button type="button" className="link-btn mt-2" onClick={() => { navigate('/'); onClose(); }}>VIEW THE OPERATIONS LOG</button>
+          </div>
+        )}
       </div>
     </aside>
   );

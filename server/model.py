@@ -9,19 +9,21 @@ PR-AUC on the hold-out year, so past rain and river level stay unconstrained.
 """
 import json
 import math
+import threading
 import time
 from datetime import datetime
 
 import joblib
 import numpy as np
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
 from .config import (
-    ARTIFACT_DIR, DATA_DIR, FEATURE_GROUP, FEATURE_LABELS, FEATURES, HORIZONS,
-    HOTSPOT_BY_ID, HOTSPOTS, LEVEL_RANK, SEED, TEST_START, level_for,
+    ARTIFACT_DIR, DATA_DIR, FEATURE_GROUP, FEATURE_LABELS, FEATURES, FLOOD_DEPTH_CM, HIGH_TIDE_M, HORIZONS,
+    HOTSPOT_BY_ID, HOTSPOTS, LEVEL_RANK, RIVER_ALERT_M, SEED, TEST_START, level_for,
 )
 from .features import build_features, flood_labels
-from .physics import EPOCH, RIVER_TIDE_GAIN, drain_base_pct
+from .physics import EPOCH, RIVER_BASE, RIVER_STORE_GAIN, RIVER_TAU_H, RIVER_TIDE_GAIN, TIDE_MEAN, drain_base_pct
 
 MODEL_PATH = ARTIFACT_DIR / "flood_models.joblib"
 METRICS_PATH = ARTIFACT_DIR / "metrics.json"
@@ -30,7 +32,7 @@ METRICS_PATH = ARTIFACT_DIR / "metrics.json"
 MONOTONIC = {
     "rain_1h": 0, "rain_3h": 0, "rain_6h": 0, "rain_fcst_3h": 1, "rain_fcst_6h": 1,
     "tide_m": 1, "tide_next_high_m": 1, "hours_to_high_tide": 0,
-    "river_m": 0, "drain_pct": 1, "drain_rate": 0, "elevation_m": 0, "past_floods": 0,
+    "river_m": 0, "drain_pct": 1, "drain_rate": 0, "water_depth_cm": 1, "elevation_m": 0, "past_floods": 0,
 }
 
 # Values that stand for "this factor is not contributing" when explaining a
@@ -40,21 +42,23 @@ MONOTONIC = {
 NEUTRAL = {
     "rain_1h": 0.0, "rain_3h": 0.0, "rain_6h": 0.0, "rain_fcst_3h": 0.0, "rain_fcst_6h": 0.0,
     "tide_m": 0.9, "tide_next_high_m": 1.4, "hours_to_high_tide": 6.2,
-    "river_m": 0.9, "drain_pct": 15.0, "drain_rate": 0.0,
+    "river_m": 0.9, "drain_pct": 15.0, "drain_rate": 0.0, "water_depth_cm": 0.0,
 }
-GROUPS = ["Rain", "Tide", "River", "Drain"]
+GROUPS = ["Rain", "Tide", "River", "Drain", "Surface"]
 DRIVER_GROUPS = {
     "rain_now": ["rain_1h", "rain_3h", "rain_6h"],
     "rain_fcst": ["rain_fcst_3h", "rain_fcst_6h"],
     "tide": ["tide_m", "tide_next_high_m", "hours_to_high_tide"],
     "river": ["river_m"],
     "drain": ["drain_pct", "drain_rate"],
+    "surface": ["water_depth_cm"],
 }
-MECH_GROUP = {"rain_now": "Rain", "rain_fcst": "Rain", "tide": "Tide", "river": "River", "drain": "Drain"}
+MECH_GROUP = {"rain_now": "Rain", "rain_fcst": "Rain", "tide": "Tide", "river": "River", "drain": "Drain",
+              "surface": "Surface"}
 
-HIGH_TIDE_M = 2.0           # tide treated as "high" for backflow
-RIVER_ALERT_M = 2.8         # Miri River alert level used by the classifier
 DRAIN_BACKFLOW_PCT = 80.0   # brief: tidal backflow = high tide + drain > 80 %
+RIVER_NEAR_M = 0.3          # a river this close to its alert level counts when it is the main driver
+MECH_PRIORITY = {"Rainfall Overload": 0, "Tidal Backflow": 1, "River Overflow": 2, "Combined": 3}
 
 
 # ═══ Training ═════════════════════════════════════════════════════════════
@@ -72,7 +76,8 @@ def history_features(hist, highs_h, highs_z):
         d = hist[hist["hotspot_id"] == hp["id"]].sort_values("time").reset_index(drop=True)
         hours = ((d["time"] - EPOCH) / pd.Timedelta(hours=1)).values
         X = build_features(hp, hours, d["rain_mm"].values, d["rain_fcst_3h"].values, d["rain_fcst_6h"].values,
-                           d["tide_m"].values, highs_h, highs_z, d["river_m"].values, d["drain_pct"].values)
+                           d["tide_m"].values, highs_h, highs_z, d["river_m"].values, d["drain_pct"].values,
+                           d["depth_cm"].values)
         Y = flood_labels(d["flooded"].values)
         meta = d[["time", "hotspot_id", "flooded", "drain_pct"]].rename(columns={"drain_pct": "drain_raw"})
         frames.append(pd.concat([meta, X, Y], axis=1))
@@ -271,6 +276,23 @@ def _fmt_minutes(hours: float) -> str:
     return f"{h} h" if m < 8 else f"{h} h {m:02d} min"
 
 
+_thread = threading.local()
+
+
+def _one_openmp_thread():
+    """Predict on a single OpenMP thread in whichever server thread is calling.
+
+    The server predicts a handful of rows at a time, where OpenMP start-up costs
+    more than it saves. OpenMP's thread count is a per-thread setting, so each
+    request thread has to set it once for itself; setting it at import only
+    covers the main thread, and concurrent requests then oversubscribe the CPU
+    (a drill step went from under 1 s to 8-12 s).
+    """
+    if not getattr(_thread, "limited", False):
+        threadpool_limits(limits=1, user_api="openmp")
+        _thread.limited = True
+
+
 class FloodModel:
     def __init__(self):
         bundle = joblib.load(MODEL_PATH)
@@ -278,6 +300,7 @@ class FloodModel:
         self.metrics = json.loads(METRICS_PATH.read_text())
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
+        _one_openmp_thread()
         P = np.column_stack([self.models[h].predict_proba(X[FEATURES])[:, 1] for h in HORIZONS])
         return np.maximum.accumulate(P, axis=1)
 
@@ -285,13 +308,13 @@ class FloodModel:
     def _shapley(self, x: dict, hp: dict):
         """Exact Shapley values over the driver groups, one column per horizon.
 
-        A group that is 'absent' takes its NEUTRAL values. With five groups this is
-        32 model evaluations, and it shares interaction effects (rain arriving at
+        A group that is 'absent' takes its NEUTRAL values. With six groups this is
+        64 model evaluations, and it shares interaction effects (rain arriving at
         high tide) fairly between the groups involved. The tide and river groups
         also own the backwater they push into the drain (and the tide its effect
         on the river mouth), so a drain that reads high only because the tide is
         in is credited to the tide.
-        Returns players, phi (players x horizons) and V (all 32 coalition forecasts).
+        Returns players, phi (players x horizons) and V (all 64 coalition forecasts).
         """
         players = list(DRIVER_GROUPS)
         n = len(players)
@@ -322,21 +345,39 @@ class FloodModel:
                     phi[i] += w[bin(mask).count("1")] * (V[mask | (1 << i)] - V[mask])
         return players, phi, V
 
-    def assess(self, hotspot_id: str, x: dict, probs=None) -> dict:
+    def assess(self, hotspot_id: str, x: dict, probs=None, context=None) -> dict:
         """Forecast, level, mechanism and plain-English drivers for one hotspot.
 
         `probs` overrides the model forecast (for example after CCTV fusion);
         explanations always describe the model's own forecast.
+        `context` (optional, from the live feed) adds what the features cannot say:
+          next_high_clock     clock time of the next high tide, e.g. "04:06"
+          depth_change        change in road water over the last hour (cm)
+          river_change        change in the Miri River over the last hour (m)
+          incident_mechanism  cause of a flood event already under way, if any
+          cctv                the CCTV reading in force, if any
+
+        The level follows the brief's probability bands, except that a road that is
+        flooded now (Smart Drain gauge, or CCTV with confidence >= 60%) is at Danger.
         """
         hp = HOTSPOT_BY_ID[hotspot_id]
+        ctx = context or {}
         x = {f: float(x[f]) for f in FEATURES}
         players, phi, V = self._shapley(x, hp)
         p_model = V[-1]
         full = 2 ** len(players) - 1
         without = {pl: V[full & ~(1 << i)] for i, pl in enumerate(players)}
         p = p_model if probs is None else np.asarray(probs, dtype=float)
-        level = level_for(float(p.max()))
-        # Alert horizon: the earliest horizon that reaches the overall level.
+        forecast_level = level_for(float(p.max()))
+
+        cctv = ctx.get("cctv") or {}
+        cctv_flooded = cctv.get("status") == "Road Flooded" and float(cctv.get("confidence", 0)) >= 0.6
+        gauge = x["water_depth_cm"]
+        depth = max(gauge, float(cctv.get("depth_cm") or 0)) if cctv_flooded else gauge
+        flooding = gauge >= FLOOD_DEPTH_CM or cctv_flooded
+        level = "Danger" if flooding else forecast_level
+
+        # Alert horizon: the earliest horizon that reaches the forecast level.
         ranks = [LEVEL_RANK[level_for(float(v))] for v in p]
         j = ranks.index(max(ranks))
         h = HORIZONS[j]
@@ -346,7 +387,7 @@ class FloodModel:
         for pl, v in contrib.items():
             by_group[MECH_GROUP[pl]] += v
         tot = sum(by_group.values())
-        shares = {g: round(v / tot, 3) if tot > 0 else 0.0 for g, v in by_group.items()}
+        shares = {g: round(v / tot, 3) if tot > 1e-3 else 0.0 for g, v in by_group.items()}
 
         # Counterfactual evidence: the model's forecast with one factor set to normal.
         counterfactual = {
@@ -354,18 +395,21 @@ class FloodModel:
             "normal_river": round(float(without["river"][j]), 3),
             "no_rain_forecast": round(float(without["rain_fcst"][j]), 3),
         }
-        mech = self._mechanism(x, hp, h, shares, float(p_model[j]), counterfactual) if level != "Normal" else None
+        mech = self._mechanism(x, hp, h, shares, ctx) if level != "Normal" else None
         return {
             "probs": {f"{hh}h": round(float(p[i]), 3) for i, hh in enumerate(HORIZONS)},
             "model_probs": {f"{hh}h": round(float(p_model[i]), 3) for i, hh in enumerate(HORIZONS)},
             "levels": {f"{hh}h": level_for(float(p[i])) for i, hh in enumerate(HORIZONS)},
             "level": level,
+            "forecast_level": forecast_level,
+            "flooding_now": bool(flooding),
+            "water_depth_cm": int(depth),
             "alert_horizon": f"{h}h",
             "mechanism": mech,
             "shares": shares,
             "drivers": self._drivers(x, contrib, hp),
             "counterfactual": counterfactual,
-            "headline": self._headline(mech, x, hp, level),
+            "headline": self._headline(mech, x, hp, flooding, depth, ctx, cctv_flooded, h),
             "projected_drain_pct": round(self._projected_drain(x, h), 0),
         }
 
@@ -382,19 +426,33 @@ class FloodModel:
         fc = x["rain_fcst_3h"] * min(h, 3) / 3 + max(0.0, x["rain_fcst_6h"] - x["rain_fcst_3h"]) * max(0, h - 3) / 3
         return min(100.0, x["drain_pct"] + max(0.0, x["drain_rate"]) * min(h, 2) + 0.6 * fc + 0.3 * x["rain_1h"])
 
-    def _mechanism(self, x, hp, h, shares, p, cf):
+    @staticmethod
+    def _river_projection(x, hp, h):
+        """Rough Miri River level h hours ahead: the forecast rain fills the catchment
+        store while what is already in it drains away (the same store as physics.river_series)."""
+        store = max(0.0, (x["river_m"] - RIVER_BASE - RIVER_TIDE_GAIN * (x["tide_m"] - TIDE_MEAN)) / RIVER_STORE_GAIN)
+        rain = (x["rain_fcst_3h"] if h <= 3 else x["rain_fcst_6h"]) / hp["rain_mult"]
+        return x["river_m"] + RIVER_STORE_GAIN * (rain - store * (1 - math.exp(-h / RIVER_TAU_H)))
+
+    def _mechanism(self, x, hp, h, shares, ctx):
         """Dominant cause, using the brief's definitions.
 
         Tidal Backflow: a tidal-outfall site, high tide within the horizon and the
         drain projected above 80 %. River Overflow: a riverside site with the Miri
-        River at alert level. Combined: both, or tidal backflow under extreme rain.
-        The Shapley shares and counterfactuals are returned alongside as evidence
-        but do not flip the label, so it stays stable from hour to hour.
+        River at alert level, forecast to pass it by a clear margin within the
+        horizon, or within 0.3 m of it while the river is the main driver.
+        Combined: both, or tidal backflow under extreme rain.
+        Water still standing after the rain has stopped keeps the cause of the
+        event that put it there. The Shapley shares only settle the near-alert
+        river case, so the label stays stable from hour to hour.
         """
         tidal = (hp["tidal_outfall"]
                  and self._max_tide_within(x, h) >= HIGH_TIDE_M
                  and self._projected_drain(x, h) > DRAIN_BACKFLOW_PCT)
-        river = hp["river_adjacent"] and x["river_m"] >= RIVER_ALERT_M
+        river = hp["river_adjacent"] and (
+            x["river_m"] >= RIVER_ALERT_M
+            or self._river_projection(x, hp, h) >= RIVER_ALERT_M + 0.2
+            or (x["river_m"] >= RIVER_ALERT_M - RIVER_NEAR_M and shares.get("River", 0) >= 0.4))
         intense = self._rain_rate(x) >= 70 or x["rain_3h"] + x["rain_fcst_3h"] >= 150
         if river and tidal:
             return "Combined"
@@ -402,6 +460,9 @@ class FloodModel:
             return "River Overflow"
         if tidal:
             return "Combined" if intense else "Tidal Backflow"
+        standing = x["water_depth_cm"] > 0 or x["drain_pct"] >= 95
+        if self._rain_rate(x) < 10 and standing and ctx.get("incident_mechanism"):
+            return ctx["incident_mechanism"]
         return "Rainfall Overload"
 
     def _drivers(self, x, contrib, hp):
@@ -410,11 +471,12 @@ class FloodModel:
             "rain_now": lambda: f"{x['rain_1h']:.0f} mm/hr rain now ({x['rain_3h']:.0f} mm in the last 3 h)",
             "rain_fcst": lambda: (f"{x['rain_fcst_3h']:.0f} mm rain forecast in the next 3 h"
                                   + (f", {x['rain_fcst_6h']:.0f} mm in 6 h" if x["rain_fcst_6h"] - x["rain_fcst_3h"] >= 5 else "")),
-            "tide": lambda: (f"High tide {x['tide_next_high_m']:.1f} m in {_fmt_minutes(x['hours_to_high_tide'])} (now {x['tide_m']:.1f} m)"
-                             if x["hours_to_high_tide"] <= 6 else f"Tide at {x['tide_m']:.1f} m"),
-            "river": lambda: f"Miri River at {x['river_m']:.2f} m (overtops near {hp['bank']:.1f} m)",
+            "tide": lambda: (f"High tide {x['tide_next_high_m']:.2f} m in {_fmt_minutes(x['hours_to_high_tide'])} (now {x['tide_m']:.2f} m)"
+                             if x["hours_to_high_tide"] <= 6 else f"Tide at {x['tide_m']:.2f} m"),
+            "river": lambda: f"Miri River at {x['river_m']:.2f} m (overtops near {hp['bank']:.2f} m)",
             "drain": lambda: (f"Smart Drain {x['drain_pct']:.0f}% full"
                               + (f", rising {x['drain_rate']:.0f}%/h" if x["drain_rate"] >= 3 else "")),
+            "surface": lambda: f"{int(x['water_depth_cm'])} cm of water on the road now",
         }
         scored = [{"key": k, "group": MECH_GROUP[k], "text": text[k](), "weight": v}
                   for k, v in contrib.items() if v > 0.01]
@@ -424,21 +486,62 @@ class FloodModel:
             d["weight"] = round(d["weight"] / tot, 3)
         return scored[:4]
 
-    def _headline(self, mech, x, hp, level):
+    @staticmethod
+    def _rain_text(x, h=3):
+        now, fc, fc6 = x["rain_1h"], x["rain_fcst_3h"], x["rain_fcst_6h"]
+        if now >= 1 and now >= fc / 3:
+            return f"{now:.0f} mm/hr rain now" + (f" ({fc:.0f} mm more forecast in 3 h)" if fc >= 5 else "")
+        if h == 6 and fc6 - fc >= 10:
+            return f"{fc6:.0f} mm rain forecast in 6 h ({fc:.0f} mm in the next 3 h)"
+        if fc >= 3:
+            return f"{fc / 3:.0f} mm/hr rain forecast ({fc:.0f} mm in 3 h)"
+        return "little rain"
+
+    @staticmethod
+    def _tide_text(x, ctx):
+        h2h, nxt, now = x["hours_to_high_tide"], x["tide_next_high_m"], x["tide_m"]
+        if h2h <= 0.75:
+            return f"High tide now ({max(now, nxt):.2f} m)"
+        if h2h > 9:   # the last high tide was within the past ~3 hours
+            return f"Tide still high ({now:.2f} m, falling)"
+        clock = f" at {ctx['next_high_clock']}" if ctx.get("next_high_clock") else ""
+        return f"High tide {nxt:.2f} m{clock} (in {_fmt_minutes(h2h)})"
+
+    def _headline(self, mech, x, hp, flooding, depth, ctx, cctv_flooded=False, h=3):
         name = hp["name"]
-        rate = self._rain_rate(x)
+        rain = self._rain_text(x, h)
+        if flooding:
+            dz = ctx.get("depth_change")
+            trend = "" if dz is None else ", rising" if dz >= 1 else ", receding" if dz <= -1 else ", steady"
+            cause = f" ({mech.lower()})" if mech else ""
+            seen = "CCTV shows" if cctv_flooded and x["water_depth_cm"] < FLOOD_DEPTH_CM else "about"
+            return f"Flooding now at {name}: {seen} {int(depth)} cm of water on the road{cause}{trend}"
         if mech is None:
+            if x["water_depth_cm"] >= 2:
+                return (f"Water on the road at {name} is below flood depth ({int(x['water_depth_cm'])} cm); "
+                        "no significant flood risk in the next 6 h")
             return f"No significant flood risk at {name} in the next 6 h"
         if mech == "Tidal Backflow":
-            when = ("High tide now" if x["hours_to_high_tide"] > 9 or x["tide_m"] >= x["tide_next_high_m"] - 0.05
-                    else f"High tide ({x['tide_next_high_m']:.1f} m) in {_fmt_minutes(x['hours_to_high_tide'])}")
-            return f"{when} + {rate:.0f} mm/hr rain → backflow risk at {name}"
+            return f"{self._tide_text(x, ctx)} + {rain} → drain backflow risk at {name}"
+        river_txt = f"Miri River {x['river_m']:.2f} m"
+        dr = ctx.get("river_change")
+        rising_to_alert = x["river_m"] < RIVER_ALERT_M <= self._river_projection(x, hp, h) - 0.2
+        if rising_to_alert:
+            river_txt += f", expected to pass its {RIVER_ALERT_M:.1f} m alert level"
+        elif dr is not None and abs(dr) >= 0.05:
+            river_txt += " and rising" if dr > 0 else " and falling"
         if mech == "River Overflow":
-            return f"Miri River at {x['river_m']:.1f} m + sustained rain → river overflow risk at {name}"
+            return f"{river_txt} (overtops near {hp['bank']:.2f} m) + {rain} → river overflow risk at {name}"
         if mech == "Combined":
-            return (f"{rate:.0f} mm/hr rain + tide {self._max_tide_within(x, 6):.1f} m + river {x['river_m']:.1f} m "
-                    f"→ compound flood risk at {name}")
-        return f"{rate:.0f} mm/hr rain ({x['rain_fcst_3h']:.0f} mm in 3 h) exceeds drain capacity → flash flood risk at {name}"
+            parts = [rain]
+            if self._max_tide_within(x, 6) >= HIGH_TIDE_M:
+                parts.append(self._tide_text(x, ctx))
+            if x["river_m"] >= RIVER_ALERT_M - RIVER_NEAR_M or rising_to_alert:
+                parts.append(river_txt)
+            return f"{' + '.join(parts)} → compound flood risk at {name}"
+        if self._rain_rate(x) >= 0.8 * hp["capacity"] and not (h == 6 and x["rain_fcst_6h"] - x["rain_fcst_3h"] >= 10):
+            return f"{rain} exceeds the drain's ~{hp['capacity']:.0f} mm/hr capacity → flash flood risk at {name}"
+        return f"Smart Drain {x['drain_pct']:.0f}% full + {rain} → flood risk at {name}"
 
 
 if __name__ == "__main__":

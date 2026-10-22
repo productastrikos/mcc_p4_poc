@@ -13,8 +13,12 @@ def rolling_sum(x, window):
     return c[idx] - c[np.maximum(0, idx - window)]
 
 
-def feature_matrix(hp, hours, rain, fcst3, fcst6, tide, highs_h, highs_z, river, drain):
-    """Feature array (n, len(FEATURES)) for one hotspot. `hours` and `highs_h` share a time base."""
+def feature_matrix(hp, hours, rain, fcst3, fcst6, tide, highs_h, highs_z, river, drain, depth):
+    """Feature array (n, len(FEATURES)) for one hotspot. `hours` and `highs_h` share a time base.
+
+    `depth` is water on the road (cm) from the Smart Drain's above-rim gauge; 0 while
+    the drain is within its banks.
+    """
     rain = np.asarray(rain, dtype=float)
     drain = np.asarray(drain, dtype=float)
     n = len(rain)
@@ -31,6 +35,7 @@ def feature_matrix(hp, hours, rain, fcst3, fcst6, tide, highs_h, highs_z, river,
         "river_m": river,
         "drain_pct": drain,
         "drain_rate": np.diff(drain, prepend=drain[0]),
+        "water_depth_cm": np.asarray(depth, dtype=float),
         "elevation_m": np.full(n, hp["elevation_m"]),
         "past_floods": np.full(n, hp["past_floods"]),
     }

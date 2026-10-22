@@ -9,10 +9,18 @@ import { useData } from '../data/DataProvider';
 import { api } from '../services/api';
 import { LEVEL_RANK, LEVELS } from '../utils';
 
+function HydraulicLine({ hyd }) {
+  if (!hyd) return null;
+  const at = (k) => (k === 0 ? 'now' : `+${k} h`);
+  return hyd.first_flood_hour != null
+    ? <p className="text-[10.5px] text-danger">Twin: floods {at(hyd.first_flood_hour)}, peak {hyd.peak_depth_cm} cm at {at(hyd.peak_hour)}</p>
+    : <p className="text-[10.5px] text-fg-faint">Twin: no flooding (peak {hyd.peak_depth_cm} cm)</p>;
+}
+
 const PRESETS = {
   'high-tide-storm': { label: 'Storm at high tide', rain_mmhr: 40, duration_h: 3, tide_m: 2.5, hours_to_high: 1.5, antecedent_mm: 0 },
   cloudburst: { label: 'Cloudburst at low tide', rain_mmhr: 90, duration_h: 2, tide_m: 1.3, hours_to_high: 6.5, antecedent_mm: 0 },
-  monsoon: { label: 'Monsoon soak', rain_mmhr: 12, duration_h: 12, tide_m: 2.2, hours_to_high: 3, antecedent_mm: 150 },
+  monsoon: { label: 'Monsoon soak', rain_mmhr: 18, duration_h: 12, tide_m: 2.2, hours_to_high: 3, antecedent_mm: 200 },
   'king-tide': { label: 'King tide, light rain', rain_mmhr: 8, duration_h: 3, tide_m: 2.9, hours_to_high: 1, antecedent_mm: 0 },
   calm: { label: 'Calm', rain_mmhr: 0, duration_h: 0, tide_m: 1.8, hours_to_high: 4, antecedent_mm: 0 },
 };
@@ -99,10 +107,10 @@ export default function Simulator() {
             <Slider label="High tide arrives in" value={params.hours_to_high} onChange={set('hours_to_high')} min={-3} max={9} step={0.5} unit="h"
               format={(v) => (v < 0 ? `${-v} h ago` : v)} hint="Negative = high tide has just passed" />
             <Slider label="Rain in the past day" value={params.antecedent_mm} onChange={set('antecedent_mm')} min={0} max={250} step={5} unit="mm"
-              hint="Wet ground and a fuller river" />
+              hint="Fills the Miri River before the storm (riverside sites)" />
             <div className="tile text-[11px] text-fg-muted leading-relaxed">
-              Total storm rain ≈ <b className="text-fg">{Math.round(params.rain_mmhr * params.duration_h)} mm</b>. Sensor readings at storm
-              onset come from the hydraulic model; the forecasts come from the trained ML model.
+              Total storm rain ≈ <b className="text-fg">{Math.round(params.rain_mmhr * params.duration_h)} mm</b> (city average; local
+              rates are 0–20% higher). Readings at storm onset come from the hydraulic model; the forecasts come from the trained ML model.
             </div>
           </div>
         </Card>
@@ -112,7 +120,7 @@ export default function Simulator() {
             {counts.map((l) => (
               <span key={l.name} className={`badge tone-${l.tone}`} style={{ fontSize: 11, padding: '4px 10px' }}>{l.name}: {l.n}</span>
             ))}
-            <span className="text-[11px] text-fg-faint ml-1">{result ? 'Updated instantly as you move the sliders' : 'Calculating…'}</span>
+            <span className="text-[11px] text-fg-faint ml-1">{result ? 'Levels are the ML forecast at storm onset; “Twin” is the hydraulic model run through the storm' : 'Calculating…'}</span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -129,7 +137,8 @@ export default function Simulator() {
                     <LevelBadge level={h.assessment.level} />
                   </div>
                   <ForecastCells probs={h.assessment.probs} compact />
-                  <MechanismBadge mechanism={h.assessment.mechanism} />
+                  <MechanismBadge mechanism={h.assessment.mechanism} depth={h.assessment.water_depth_cm} />
+                  <HydraulicLine hyd={h.hydraulic} />
                 </button>
               ))}
             </div>
@@ -174,7 +183,7 @@ export default function Simulator() {
                     { label: 'Miri River', data: city.river, color: 'chart-3', fill: false },
                   ],
                 }} />
-              <ChartCard title="Hydraulic check" subtitle={`${sel.name}: simulated road water depth, cm`} height={170}
+              <ChartCard title="Hydraulic check (twin)" subtitle={`${sel.name}: simulated road water depth, cm`} height={170}
                 data={{
                   labels: sel.timeline.hour.map((x) => (x === 0 ? 'Now' : `+${x}h`)),
                   datasets: [{ label: 'Road water (cm)', data: sel.timeline.depth, color: 'danger' }],

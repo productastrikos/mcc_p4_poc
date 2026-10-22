@@ -47,7 +47,7 @@ function styleDatasets(type, datasets) {
   });
 }
 
-function buildOptions({ type, legend, yMax, yLabel, stacked, thresholds, options }) {
+function buildOptions({ type, legend, yMax, ySuggestedMax, xMaxTicks, yLabel, stacked, thresholds, options }) {
   if (type === 'doughnut') {
     return {
       responsive: true, maintainAspectRatio: false, cutout: '65%',
@@ -74,7 +74,7 @@ function buildOptions({ type, legend, yMax, yLabel, stacked, thresholds, options
         lines: (thresholds || []).map((t) => ({ value: t.value, color: resolveColor(t.tone), dash: t.dash })),
       },
     },
-    scales: axisOptions({ yMax, yLabel, stacked }),
+    scales: axisOptions({ yMax, ySuggestedMax, xMaxTicks, yLabel, stacked }),
     ...options,
   };
 }
@@ -92,7 +92,7 @@ function buildOptions({ type, legend, yMax, yLabel, stacked, thresholds, options
  */
 export default function ChartCard({
   title, subtitle, type = 'line', data, height = 200,
-  legend = false, yMax, yLabel, stacked = false, thresholds, timeframes, defaultTimeframe,
+  legend = false, yMax, ySuggestedMax, xMaxTicks, yLabel, stacked = false, thresholds, timeframes, defaultTimeframe,
   info = false, actions, options, className = '',
 }) {
   const { theme } = useTheme();
@@ -106,7 +106,7 @@ export default function ChartCard({
 
   const Chart = CHARTS[type];
   const chartData = { labels, datasets: styleDatasets(type, datasets) };
-  const chartOptions = buildOptions({ type, legend, yMax, yLabel, stacked, thresholds, options });
+  const chartOptions = buildOptions({ type, legend, yMax, ySuggestedMax, xMaxTicks, yLabel, stacked, thresholds, options });
 
   const header = (
     <>

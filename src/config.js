@@ -20,8 +20,11 @@ export const APP = {
   },
 };
 
-// Placeholder user. Replace with MCC's sign-in when integrated.
+// Fallback user shown before anyone has signed in. The duty sign-in
+// (components/layout/OperatorGate.js) replaces it; swap for MCC's single sign-on when integrated.
 export const USER = {
   name: 'MSCCC Duty Officer',
   role: 'Miri City Council',
 };
+
+export const ROLES = ['MSCCC Duty Officer', 'MSCCC Shift Supervisor', 'MCC Engineering liaison', 'JPBD Miri liaison'];

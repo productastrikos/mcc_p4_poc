@@ -7,7 +7,7 @@ import { useData } from '../data/DataProvider';
 import { api } from '../services/api';
 
 const H_TABS = [{ value: '1', label: '+1 h' }, { value: '3', label: '+3 h' }, { value: '6', label: '+6 h' }];
-const GROUP_COLOR = { Rain: 'chart-1', Tide: 'chart-2', River: 'chart-3', Drain: 'chart-4', Site: 'chart-8' };
+const GROUP_COLOR = { Rain: 'chart-1', Tide: 'chart-2', River: 'chart-3', Drain: 'chart-4', Surface: 'chart-6', Site: 'chart-8' };
 const num = (v, d = 3) => (v == null ? '–' : Number(v).toFixed(d));
 
 function MetricsTable({ m }) {
@@ -19,7 +19,7 @@ function MetricsTable({ m }) {
   return (
     <DataTable rowKey="id" rows={rows} columns={[
       { key: 'name', header: 'Method', strong: true, render: (r) => (r.id === 'gb' ? <span className="text-primary font-semibold">{r.name}</span> : r.name) },
-      { key: 'roc_auc', header: 'ROC-AUC', render: (r) => (r.id === 'base' ? '–' : num(r.roc_auc)) },
+      { key: 'roc_auc', header: 'ROC-AUC', render: (r) => (r.id === 'base' ? '–' : num(r.roc_auc, 4)) },
       { key: 'pr_auc', header: 'PR-AUC', render: (r) => (r.id === 'base' ? '–' : num(r.pr_auc)) },
       { key: 'precision', header: 'Precision', render: (r) => num(r.precision, 2) },
       { key: 'recall', header: 'Recall', render: (r) => num(r.recall, 2) },
@@ -60,14 +60,14 @@ export default function ModelPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <SensorTile icon="analytics" label={`PR-AUC +${h}h`} value={num(hm.pr_auc, 2)} unit="" sub={`ROC-AUC ${num(hm.roc_auc, 3)}`} />
+        <SensorTile icon="analytics" label={`PR-AUC +${h}h`} value={num(hm.pr_auc, 2)} unit="" sub={`ROC-AUC ${num(hm.roc_auc, 4)}`} />
         <SensorTile icon="check" label={`Recall +${h}h`} value={Math.round(hm.recall * 100)} unit="%" sub={`Precision ${Math.round(hm.precision * 100)}%`} />
         <SensorTile icon="clock" label="Warning lead time" value={lead.ai_warning.mean_lead_h} unit="h"
           sub={`Reactive rule: ${lead.baseline_drain90.mean_lead_h} h`} tone="success" />
-        <SensorTile icon="shield" label="Flood onsets warned" value={`${lead.ai_warning.warned}/${lead.ai_warning.onsets}`} unit=""
+        <SensorTile icon="shield" label="Onsets warned" value={`${lead.ai_warning.warned}/${lead.ai_warning.onsets}`} unit=""
           sub={`Reactive rule: ${lead.baseline_drain90.warned}/${lead.baseline_drain90.onsets}`} />
         <SensorTile icon="bell" label="False alarms" value={fa.ai_warning.false_alarms_per_month} unit="/ month"
-          sub={`Reactive rule: ${fa.baseline_drain90.false_alarms_per_month} / month`} />
+          sub={`Reactive rule: ${fa.baseline_drain90.false_alarms_per_month}/mo`} />
         <SensorTile icon="history" label="Flood events" value={m.events.total} unit="" sub={`${m.events.train} train · ${m.events.test} test`} />
       </div>
 
@@ -79,6 +79,7 @@ export default function ModelPage() {
           <span>Missed <b className="text-fg">{hm.confusion.fn}</b></span>
           <span>True negatives <b className="text-fg">{hm.confusion.tn.toLocaleString()}</b></span>
           <span>Accuracy <b className="text-fg">{(hm.accuracy * 100).toFixed(2)}%</b> (floods are rare, so accuracy alone flatters any model)</span>
+          <span className="basis-full">These scores include hours when the road is already flooded, which are easy to call from the water-on-road reading. The fair test of early warning is the lead time and onsets warned above, which only count the hours before each flood began.</span>
         </div>
       </Card>
 
@@ -141,9 +142,9 @@ export default function ModelPage() {
       <Card title="How the models work" subtitle={`Trained ${m.trained_at.replace('T', ' ')} in ${m.train_seconds} s`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-xs text-fg-muted leading-relaxed">
           <p><b className="text-fg">Data.</b> Two years of hourly synthetic readings for six hotspots ({m.rows.history_train.toLocaleString()} training and {m.rows.test.toLocaleString()} test rows) from a hydrology model of tides, the Miri River, Smart Drains and surface ponding, with {m.events.total} flood events including the large January 2025 event. Training adds {m.rows.design_storm_episodes.toLocaleString()} simulated design storms ({m.rows.design_storms.toLocaleString()} rows) so the simulator's full slider range is covered.</p>
-          <p><b className="text-fg">Forecasting.</b> {m.algorithm}. One model per horizon predicts the probability that a hotspot floods (road water ≥ 10 cm) within 1, 3 or 6 hours. Risk only rises with forecast rain, tide and drain level.</p>
-          <p><b className="text-fg">Explanations.</b> For each forecast, exact Shapley values over five factor groups (rain now, rain forecast, tide, river, drain) show what drives the risk, and what-if checks re-run the model with one factor set to normal.</p>
-          <p><b className="text-fg">Mechanism.</b> Tidal Backflow when a tidal-outfall site has high tide (≥ 2.0 m) within the horizon and the drain is projected above 80%; River Overflow when a riverside site has the Miri River at alert level (2.8 m); Combined when both apply or rain is extreme; otherwise Rainfall Overload.</p>
+          <p><b className="text-fg">Forecasting.</b> {m.algorithm}. One model per horizon predicts the probability that a hotspot floods (road water ≥ 10 cm) within 1, 3 or 6 hours, from {m.features.length} inputs including the water already on the road (Smart Drain above-rim gauge). Risk only rises with forecast rain, tide, drain level and road water. A road that is flooded now is always shown at Danger.</p>
+          <p><b className="text-fg">Explanations.</b> For each forecast, exact Shapley values over six factor groups (rain now, rain forecast, tide, river, drain, road water) show what drives the risk, and what-if checks re-run the model with one factor set to normal.</p>
+          <p><b className="text-fg">Mechanism.</b> Tidal Backflow when a tidal-outfall site has high tide (≥ 2.0 m) within the horizon and the drain is projected above 80%; River Overflow when a riverside site has the Miri River at its 2.8 m alert level or forecast to pass it; Combined when both apply or rain is extreme; otherwise Rainfall Overload. Water still standing after the rain keeps the cause of the event that put it there.</p>
           <p><b className="text-fg">CCTV.</b> A vision model classifies frames as Normal, Rising, Overflowing or Road Flooded. The reading updates the forecast odds, weighted by its confidence, for 30 minutes.</p>
           <p><b className="text-fg">Limits.</b> All data is synthetic, so these scores show the pipeline works, not how it will perform in Miri. Retrain and re-validate on MCC's Smart Drain, tide gauge and rainfall records before operational use.</p>
         </div>

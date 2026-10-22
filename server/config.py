@@ -10,10 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
 ARTIFACT_DIR = ROOT / "artifacts"
-STATIC_DIR = ROOT / "static"
-CCTV_DIR = STATIC_DIR / "cctv"
-
-for d in (DATA_DIR, ARTIFACT_DIR, CCTV_DIR):
+for d in (DATA_DIR, ARTIFACT_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 # Synthetic history: two years of hourly readings ending the day before today.
@@ -47,7 +44,7 @@ LEVEL_RANK = {name: i for i, (name, _) in enumerate(LEVELS)}
 FEATURES = [
     "rain_1h", "rain_3h", "rain_6h", "rain_fcst_3h", "rain_fcst_6h",
     "tide_m", "tide_next_high_m", "hours_to_high_tide",
-    "river_m", "drain_pct", "drain_rate",
+    "river_m", "drain_pct", "drain_rate", "water_depth_cm",
     "elevation_m", "past_floods",
 ]
 
@@ -63,6 +60,7 @@ FEATURE_LABELS = {
     "river_m": "Miri River level",
     "drain_pct": "Smart Drain level",
     "drain_rate": "Drain level rate of change",
+    "water_depth_cm": "Water on the road now",
     "elevation_m": "Hotspot elevation",
     "past_floods": "Past flood count",
 }
@@ -73,9 +71,11 @@ FEATURE_GROUP = {
     "tide_m": "Tide", "tide_next_high_m": "Tide", "hours_to_high_tide": "Tide",
     "river_m": "River",
     "drain_pct": "Drain", "drain_rate": "Drain",
+    "water_depth_cm": "Surface",
     "elevation_m": "Site", "past_floods": "Site",
 }
 
+# past_floods  floods in MCC's records before the sensor history starts (model feature)
 # capacity  drain discharge capacity (mm/h of rainfall equivalent)
 # storage   drain storage before surcharge (mm)
 # runoff    share of rainfall reaching the drain this hour; lag = share from the previous hour
@@ -89,7 +89,7 @@ HOTSPOTS = [
         "elevation_m": 1.6, "past_floods": 12, "population": 9400,
         "area": "Jalan Adong 1 / 2A, Pujut, beside Sungai Miri",
         "roads": ["Jalan Adong 1", "Jalan Adong 2A", "Jalan Pujut Adong"],
-        "drain": "Sg. Adong tidal outfall (Smart Drain SD-PA-01)",
+        "drain": "Sg. Adong tidal outfall drain", "drain_id": "SD-PA-01",
         "cctv": "CAM-PA-02",
         "relief_centre": "Dewan Masyarakat Pujut (relief centre)",
         "pump_point": "Sg. Adong outfall culvert",
@@ -103,7 +103,7 @@ HOTSPOTS = [
         "elevation_m": 1.9, "past_floods": 9, "population": 7100,
         "area": "Jalan Tanjung Batu 4-7, Padang Kerbau",
         "roads": ["Jalan Tanjung Batu 4", "Jalan Tanjung Batu 7"],
-        "drain": "Padang Kerbau main drain (SD-TB-01)",
+        "drain": "Padang Kerbau main drain", "drain_id": "SD-TB-01",
         "cctv": "CAM-TB-01",
         "relief_centre": "Dewan Masyarakat Krokop (relief centre)",
         "pump_point": "Jalan Tanjung Batu 7 sump",
@@ -117,7 +117,7 @@ HOTSPOTS = [
         "elevation_m": 2.4, "past_floods": 10, "population": 11800,
         "area": "Taman Tunku and Jalan Dato catchment",
         "roads": ["Jalan Dato", "Jalan Taman Tunku"],
-        "drain": "Taman Tunku trunk drain (SD-TT-02)",
+        "drain": "Taman Tunku trunk drain", "drain_id": "SD-TT-02",
         "cctv": "CAM-TT-03",
         "relief_centre": "Dewan Masyarakat Lusut (relief centre)",
         "pump_point": "Taman Tunku trunk drain junction",
@@ -131,7 +131,7 @@ HOTSPOTS = [
         "elevation_m": 3.1, "past_floods": 8, "population": 13500,
         "area": "Senadin commercial area and MCOT",
         "roads": ["Jalan Senadin", "Jalan Kuala Baram Bypass"],
-        "drain": "Senadin collector drain (SD-SM-01)",
+        "drain": "Senadin collector drain", "drain_id": "SD-SM-01",
         "cctv": "CAM-SM-01",
         "relief_centre": "Dewan Senadin (relief centre)",
         "pump_point": "Senadin collector drain",
@@ -145,7 +145,7 @@ HOTSPOTS = [
         "elevation_m": 2.8, "past_floods": 7, "population": 6900,
         "area": "Desa Senadin residential estate",
         "roads": ["Jalan Desa Senadin", "Lorong Desa Senadin 2"],
-        "drain": "Desa Senadin estate drain (SD-DS-01)",
+        "drain": "Desa Senadin estate drain", "drain_id": "SD-DS-01",
         "cctv": "CAM-DS-01",
         "relief_centre": "SK Senadin hall (relief centre)",
         "pump_point": "Desa Senadin estate outfall",
@@ -159,7 +159,7 @@ HOTSPOTS = [
         "elevation_m": 3.8, "past_floods": 6, "population": 8800,
         "area": "Tudan / Desaras, foot of the Tudan hills",
         "roads": ["Jalan Tudan", "Lorong Desaras 1A"],
-        "drain": "Tudan hillside interceptor drain (SD-TD-01)",
+        "drain": "Tudan hillside interceptor drain", "drain_id": "SD-TD-01",
         "cctv": "CAM-TD-02",
         "relief_centre": "Dewan Masyarakat Tudan (relief centre)",
         "pump_point": "Lorong Desaras 1A culvert",
@@ -178,10 +178,19 @@ for _h in HOTSPOTS:
 
 HOTSPOT_BY_ID = {h["id"]: h for h in HOTSPOTS}
 
+# Mobile pump fleet (MCC Engineering). A deployed unit adds discharge at the
+# hotspot's pump point, in mm/h of rainfall equivalent over the catchment.
+PUMP_UNITS = ["MP-01", "MP-02", "MP-03", "MP-04"]
+PUMP_MMHR = 12.0
+
+# Miri River alert level (m) used by the mechanism classifier and the twin.
+RIVER_ALERT_M = 2.8
+HIGH_TIDE_M = 2.0
+
 PUBLIC_FIELDS = [
     "id", "name", "short", "lat", "lng", "pilot", "elevation_m", "past_floods", "population",
-    "area", "roads", "drain", "cctv", "relief_centre", "pump_point", "known_mechanisms",
-    "tidal_outfall", "river_adjacent", "bank",
+    "area", "roads", "drain", "drain_id", "cctv", "relief_centre", "pump_point", "known_mechanisms",
+    "tidal_outfall", "river_adjacent", "bank", "outfall", "capacity", "tide_sens", "river_sens",
 ]
 
 
