@@ -1,8 +1,12 @@
 /* Thin client for the FloodSense API (server/main.py).
-   In development, package.json "proxy" forwards /api to http://localhost:8000. */
+   REACT_APP_API_URL is the API origin, baked in at build time from .env.production.
+   Left empty (.env), paths stay relative: in development package.json "proxy"
+   forwards /api to the local server. */
+
+const API_URL = (process.env.REACT_APP_API_URL || '').replace(/\/+$/, '');
 
 async function request(method, path, body) {
-  const res = await fetch(path, {
+  const res = await fetch(API_URL + path, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,

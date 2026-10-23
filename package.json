@@ -26,7 +26,7 @@
     "dev": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "server": "python -m uvicorn server.main:app --port 8000",
+    "server": "python -m server",
     "train": "python -m server.train"
   },
   "eslintConfig": {

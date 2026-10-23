@@ -5,12 +5,14 @@ The first start trains the models if server/artifacts is empty (about 3 minutes)
 """
 import json
 import math
+import os
 import re
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -51,6 +53,14 @@ alerts = AlertStore()
 engine = LiveEngine(model, alerts)
 
 app = FastAPI(title="Miri FloodSense API", version="0.1.0")
+
+# The deployed UI is on its own subdomain, so the browser calls this API cross-origin.
+# CORS_ORIGINS lists the UI origins, comma-separated. Unset means same-origin only
+# (the dev proxy, or the single-port build served below).
+CORS_ORIGINS = [o.strip().rstrip("/") for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
+if CORS_ORIGINS:
+    app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS,
+                       allow_methods=["GET", "POST", "PATCH", "DELETE"], allow_headers=["Content-Type"])
 
 
 def clean(obj):

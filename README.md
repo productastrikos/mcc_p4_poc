@@ -18,7 +18,11 @@ npm start          # UI on http://localhost:3000 (proxies /api to :8000)
 
 On the first start the server generates the data and trains the models, which takes about 3 minutes. To do this ahead of time, run `npm run train`.
 
-To serve everything from one port, run `npm run build` and then `npm run server`, and open http://localhost:8000.
+To serve everything from one port, run `npm run build` and then `npm run server`, and open http://localhost:8000. `npm run build` points the UI at the deployed API (`.env.production`); for a local build, first create `.env.production.local` containing `REACT_APP_API_URL=` (empty).
+
+### Deploy
+
+The server deployment (mcc-flood.astrikos.xyz, ports 3347 / 4347) is in [DEPLOY.md](DEPLOY.md).
 
 ### Enable Claude (optional)
 
@@ -103,6 +107,7 @@ Water still standing on the road after the rain keeps the mechanism of the incid
 
 ```
 server/                    FastAPI backend (Python)
+  __main__.py              python -m server: runs the API on $HOST:$PORT (default 127.0.0.1:8000)
   main.py                  API endpoints; serves build/ when present
   config.py                hotspots, features, levels
   physics.py               synthetic tide, river, drain and ponding model
