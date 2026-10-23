@@ -6,3 +6,7 @@ server/.env
 server/artifacts/
 server/data/alerts.json
 .venv/
+
+# Reference docs kept out of this public repo
+deployment_context (1).md
+ASTRIKOS-UI-THEME 1.md
