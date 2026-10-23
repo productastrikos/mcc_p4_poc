@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Button, Card, Drawer, PageHeader, ProgressBar } from '../components/ui';
+import { Badge, Button, Card, Drawer, EmptyState, Loading, PageHeader, ProgressBar } from '../components/ui';
 import ChartCard from '../components/charts/ChartCard';
 import RiskMap from '../components/flood/RiskMap';
 import FeedControls, { ModeBanner } from '../components/flood/FeedControls';
@@ -24,7 +24,7 @@ function HotspotRow({ h, selected, onSelect, onOpen }) {
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[13px] font-semibold text-fg truncate">
-            {h.name} {h.pilot && <span className="text-[9px] font-bold text-primary align-middle ml-1">PILOT</span>}
+            {h.name} {h.pilot && <span className="text-[10px] font-bold text-primary align-middle ml-1">PILOT</span>}
           </p>
           <MechanismBadge mechanism={a?.mechanism} depth={a?.water_depth_cm} />
         </div>
@@ -65,8 +65,9 @@ function ForecastTimeline({ hotspots, onOpen }) {
                     const l = levelFor(p);
                     return (
                       <td key={k}>
-                        <span className={`badge tone-${l.tone} tabular-nums`} style={{ minWidth: 64, justifyContent: 'center' }}>
-                          {pct(p)} · {l.name}
+                        <span className={`fc-cell tone-${l.tone}`}>
+                          <span className="fc-cell-value">{pct(p)}</span>
+                          <span className="fc-cell-label">{l.name.toUpperCase()}</span>
                         </span>
                       </td>
                     );
@@ -113,7 +114,7 @@ function OpsLog({ events }) {
 function Incidents({ incidents, onOpen }) {
   const { open, closed } = incidents;
   if (!open.length && !closed.length) {
-    return <p className="text-xs text-fg-faint">No incidents in this session. An incident opens when a hotspot reaches Warning or its road floods.</p>;
+    return <EmptyState icon="shield" title="No incidents this session">An incident opens when a hotspot reaches Warning or its road floods. Run a storm drill to see one.</EmptyState>;
   }
   return (
     <div className="space-y-2">
@@ -141,7 +142,7 @@ function Incidents({ incidents, onOpen }) {
 /* ─── Drill-down drawers for the sensor tiles ─────────────────────────── */
 function RainDrawer({ live, onClose }) {
   return (
-    <Drawer eyebrow="Rainfall" title="Rain by hotspot" subtitle={`Sensor time ${dayTime(live.sim_time)}`} onClose={onClose} width={460}>
+    <Drawer eyebrow="Rainfall" title="Rain by hotspot" subtitle={`Sensor time ${dayTime(live.sim_time)}`} onClose={onClose} width={420}>
       <table className="table">
         <thead><tr><th>Hotspot</th><th>Now</th><th>Last 3 h</th><th>Next 3 h</th><th>Next 6 h</th></tr></thead>
         <tbody>
@@ -166,8 +167,8 @@ function TideDrawer({ live, onClose }) {
   useEffect(() => { api.get('/api/tides?days=3').then(setRows).catch(() => setRows([])); }, [live.sim_time]);
   const c = live.city;
   return (
-    <Drawer eyebrow="Tide" title="Tide table, Miri" subtitle={`Now ${c.tide_m.toFixed(2)} m and ${c.tide_trend} · heights in metres above chart datum`} onClose={onClose} width={440}>
-      {!rows && <p className="text-xs text-fg-faint">Loading…</p>}
+    <Drawer eyebrow="Tide" title="Tide table, Miri" subtitle={`Now ${c.tide_m.toFixed(2)} m and ${c.tide_trend} · heights in metres above chart datum`} onClose={onClose} width={420}>
+      {!rows && <Loading>Loading the tide table…</Loading>}
       {rows && (
         <table className="table">
           <thead><tr><th>Day</th><th>Time</th><th>Tide</th><th>Height</th></tr></thead>
@@ -195,7 +196,7 @@ function RiverDrawer({ live, hist, onClose }) {
   const riverside = live.hotspots.filter((h) => h.river_adjacent);
   const c = live.city;
   return (
-    <Drawer eyebrow="Miri River" title={`${c.river_m.toFixed(2)} m`} subtitle={`${c.river_trend >= 0 ? '+' : ''}${c.river_trend.toFixed(2)} m in the last hour · alert level ${RIVER_ALERT_M} m`} onClose={onClose} width={460}>
+    <Drawer eyebrow="Miri River" title={`${c.river_m.toFixed(2)} m`} subtitle={`${c.river_trend >= 0 ? '+' : ''}${c.river_trend.toFixed(2)} m in the last hour · alert level ${RIVER_ALERT_M} m`} onClose={onClose} width={420}>
       <div className="space-y-4">
         <div>
           <div className="flex justify-between text-[11px] mb-1"><span className="text-fg-faint">Level against alert level</span><span className="font-semibold text-fg">{Math.round((c.river_m / RIVER_ALERT_M) * 100)}%</span></div>
@@ -231,12 +232,12 @@ function RiverDrawer({ live, hist, onClose }) {
 function DrainDrawer({ live, onClose }) {
   const navigate = useNavigate();
   return (
-    <Drawer eyebrow="Smart Drains" title="Drain levels" subtitle="% of drain depth; 100% means brim-full or surcharging" onClose={onClose} width={440}
+    <Drawer eyebrow="Smart Drains" title="Drain levels" subtitle="% of drain depth; 100% means brim-full or surcharging" onClose={onClose} width={420}
       footer={<Button onClick={() => navigate('/twin')} icon="layers">Open digital twin</Button>}>
       <div className="space-y-3">
         {[...live.hotspots].sort((a, b) => b.sensors.drain_pct - a.sensors.drain_pct).map((h) => (
           <div key={h.id}>
-            <div className="flex justify-between text-[11.5px] mb-1">
+            <div className="flex justify-between text-xs mb-1">
               <span className="text-fg font-semibold">{h.name} <span className="text-fg-faint font-normal">{h.drain_id}</span></span>
               <span className="tabular-nums text-fg">{Math.round(h.sensors.drain_pct)}% <span className="text-fg-faint">({h.sensors.drain_rate >= 0 ? '+' : ''}{h.sensors.drain_rate}%/h)</span></span>
             </div>
@@ -254,8 +255,8 @@ function RiskDrawer({ live, onClose }) {
   const list = live.hotspots.filter((h) => LEVEL_RANK[h.assessment.level] >= 2)
     .sort((a, b) => LEVEL_RANK[b.assessment.level] - LEVEL_RANK[a.assessment.level]);
   return (
-    <Drawer eyebrow="Warning or above" title={`${list.length} of ${live.hotspots.length} hotspots`} subtitle="Any horizon at 50% or more, or flooding now" onClose={onClose} width={460}>
-      {list.length === 0 && <p className="text-xs text-fg-faint">No hotspot is at Warning or Danger.</p>}
+    <Drawer eyebrow="Warning or above" title={`${list.length} of ${live.hotspots.length} hotspots`} subtitle="Any horizon at 50% or more, or flooding now" onClose={onClose} width={420}>
+      {list.length === 0 && <EmptyState icon="check" title="No hotspot at Warning or Danger">All six are below 50% at every horizon. They appear here as soon as one rises.</EmptyState>}
       <div className="space-y-2">
         {list.map((h) => (
           <button key={h.id} type="button" className="tile w-full text-left" onClick={() => navigate(`/hotspots/${h.id}`)}>
@@ -282,7 +283,7 @@ export default function Dashboard() {
     api.get(`/api/live/history/${selected}?hours=36`).then(setHist).catch(() => {});
   }, [simTime, selected]);
 
-  if (!live) return <div className="space-y-4">{!online && <OfflineBanner />}<p className="text-sm text-fg-faint">Loading live feed…</p></div>;
+  if (!live) return <div className="space-y-4">{!online && <OfflineBanner />}<Loading>Loading the live feed…</Loading></div>;
 
   const open = (id) => navigate(`/hotspots/${id}`);
   const ranked = [...live.hotspots].sort((a, b) =>

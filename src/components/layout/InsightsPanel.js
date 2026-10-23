@@ -31,10 +31,10 @@ export default function InsightsPanel({ onClose }) {
   };
 
   return (
-    <aside className="side-panel w-96 max-w-full" style={{ borderLeft: '2px solid var(--color-accent-border)' }}>
+    <aside className="side-panel is-advisory">
       <div className="panel-header">
         <div>
-          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-accent"><Icon name="sparkles" size={15} />AI Briefing</h3>
+          <h3 className="panel-title flex items-center gap-1.5 text-accent"><Icon name="sparkles" size={15} />AI Briefing</h3>
           <p className="text-xs text-fg-faint">Sensor time {hhmm(live?.sim_time)} · {atRisk.length} hotspot{atRisk.length === 1 ? '' : 's'} at Watch or above</p>
         </div>
         <IconButton icon="close" label="Close" plain onClick={onClose} />
@@ -54,7 +54,7 @@ export default function InsightsPanel({ onClose }) {
           const more = site?.options?.one_more_pump;
           const openDraft = alerts.find((a) => a.hotspot_id === h.id && a.source === live.source && ['pending', 'drafting'].includes(a.status));
           return (
-            <div key={h.id} className="card overflow-hidden" style={{ borderColor: 'var(--color-accent-border)' }}>
+            <div key={h.id} className="card is-advisory">
               <button type="button" className="w-full text-left p-3.5" onClick={() => setExpanded(isOpen ? '' : h.id)}>
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <span className="text-[13px] font-semibold text-fg">{h.name}</span>

@@ -6,13 +6,29 @@ import { APP, USER } from '../../config';
 import { initials } from '../../utils';
 import { useData } from '../../data/DataProvider';
 
-export function BrandMark() {
+export function BrandMark({ size = 32 }) {
   return APP.logo
-    ? <img src={APP.logo} alt={APP.name} style={{ height: 32, width: 'auto' }} />
+    ? <img src={APP.logo} alt={APP.org || APP.name} width={size} height={size} className="brand-logo" />
     : <div className="brand-mark">{APP.logoInitials || initials(APP.name)}</div>;
 }
 
-export default function Sidebar({ collapsed }) {
+/** Logo lockup: the council crest, a hairline rule, then the product and council names. */
+export function BrandLockup({ size = 38 }) {
+  return (
+    <span className="astk-lockup">
+      <BrandMark size={size} />
+      <span className="astk-lockup-rule" />
+      <span className="astk-lockup-text">
+        <span className="astk-lockup-name">{APP.short}</span>
+        <span className="astk-lockup-product">{APP.org}</span>
+        <span className="astk-lockup-descriptor">{APP.orgLocal}</span>
+      </span>
+    </span>
+  );
+}
+
+/** collapsed: icon rail (desktop). open: the off-canvas drawer is showing (below 1024px). */
+export default function Sidebar({ collapsed, open = false }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { operator, pendingAlerts, live } = useData();
@@ -21,12 +37,12 @@ export default function Sidebar({ collapsed }) {
     '/alerts': pendingAlerts.length || null,
     '/twin': live?.incidents?.open?.length || null,
   };
+  collapsed = collapsed && !open;
 
   return (
-    <aside className={`sidebar ${collapsed ? 'is-collapsed' : ''}`}>
-      <div className="sidebar-brand" onClick={() => navigate('/')}>
-        <BrandMark />
-        {!collapsed && <span className="brand-name">{APP.name}</span>}
+    <aside className={`sidebar ${collapsed ? 'is-collapsed' : ''} ${open ? 'is-open' : ''}`}>
+      <div className="sidebar-brand" onClick={() => navigate('/')} title={`${APP.name} · ${APP.org} (${APP.orgLocal})`}>
+        {collapsed ? <BrandMark size={32} /> : <BrandLockup />}
       </div>
 
       <nav className="nav">
@@ -52,9 +68,9 @@ export default function Sidebar({ collapsed }) {
 
       {!collapsed && (
         <div className="sidebar-user">
-          <div className="avatar" style={{ width: 30, height: 30, fontSize: 11, borderRadius: 8 }}>{initials(user.name)}</div>
+          <div className="avatar avatar-sm">{initials(user.name)}</div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-fg truncate">{user.name}</p>
+            <p className="text-xs font-bold text-fg truncate">{user.name}</p>
             <p className="text-[10px] text-fg-faint truncate">{user.role}</p>
           </div>
         </div>

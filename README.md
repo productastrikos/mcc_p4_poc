@@ -128,11 +128,11 @@ src/                       React UI (Create React App, Tailwind, Chart.js, React
                            renderer and CCTV look (engine), React views (lazy-loaded)
   components/layout/       header, sidebar, notifications, AI Briefing, SITREP, operator sign-in
   data/DataProvider.js     polls /api/live and /api/alerts; operator session; response actions
-  theme/                   the template's colours and component styles, unchanged (FloodSense-only
-                           classes are appended at the end of components.css)
+  theme/                   theme.css: Astrikos tokens (dark and light), base styles and every
+                           component class; ThemeProvider.js: data-theme on <body>
 ```
 
-The UI is built on the dashboard template that was already in this folder and keeps its theme: colours, buttons, cards and chart styles all come from `src/theme/theme.css`. Flood levels use the template's status colours (Normal = success, Watch = info, Warning = warning, Danger = danger). Its unused example pages (`Charts`, `Tables`, `ListDetail`, `MapPage`) and `sampleData.js` are still in `src/` but are not routed.
+The UI follows the Astrikos UI theme specification (v1.0): Lexend Deca for headings and figures, Lato for everything else, graphite surfaces in dark mode (the default) and ink on paper in light mode. Every colour, card, button, table and chart style comes from the token blocks at the top of `src/theme/theme.css`; Tailwind's colour names are mapped onto the same tokens in `tailwind.config.js`. Flood levels use the status colours (Normal = success, Watch = info, Warning = warning, Danger = danger). The 3D street scenes in `src/twin3d` keep their own material colours, since they depict the physical site rather than the interface. The dashboard template's unused example pages (`Charts`, `Tables`, `ListDetail`, `MapPage`) and `sampleData.js` are still in `src/` but are not routed.
 
 ## API
 
@@ -161,4 +161,5 @@ The UI is built on the dashboard template that was already in this folder and ke
 - The alert history is stored in `server/data/alerts.json` (set `FLOODSENSE_ALERTS` to use another file), and the live feed, incidents and response actions are held in memory.
 - Operator sign-in only records a name and role in the browser. There are no accounts or passwords.
 - The ML forecast and the digital twin are both built on the same synthetic hydraulics, so they agree more closely here than they would on real data.
+- The logo (`public/mcc-logo.svg`) is the crest of Majlis Bandaraya Miri (Miri City Council), taken from Wikimedia Commons ([Seal of Miri.svg](https://commons.wikimedia.org/wiki/File:Seal_of_Miri.svg), public domain) and optimised with svgo. `favicon.ico` and `apple-touch-icon.png` are rendered from it. It is the council's official insignia, so confirm with MCC before using it outside this prototype.
 - The camera feeds are rendered from the 3D twin, not real CCTV, and the street models are representative layouts rather than surveys of each site. The offline gauge reader is tuned to the simulated staff; real photos are better handled by Claude vision.

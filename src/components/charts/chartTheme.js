@@ -29,7 +29,7 @@ const thresholdLinesPlugin = {
       if (label) {
         ctx.setLineDash([]);
         ctx.fillStyle = color;
-        ctx.font = '9px Inter, system-ui, sans-serif';
+        ctx.font = '10px Lato, system-ui, sans-serif';
         ctx.fillText(label, right + 4, py + 3);
       }
     });
@@ -40,12 +40,13 @@ const thresholdLinesPlugin = {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler, thresholdLinesPlugin);
 ChartJS.defaults.interaction.mode = 'index';
 ChartJS.defaults.interaction.intersect = false;
-ChartJS.defaults.font.family = 'Inter, system-ui, sans-serif';
+ChartJS.defaults.font.family = 'Lato, system-ui, sans-serif';
 
 /* ─── Reading theme tokens ─────────────────────────────────── */
+// Read from <body>: that is where data-theme switches the --app-* tokens.
 export function cssVar(name) {
-  if (typeof document === 'undefined') return '';
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (typeof document === 'undefined' || !document.body) return '';
+  return getComputedStyle(document.body).getPropertyValue(name).trim();
 }
 
 const NAMED = ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral'];
@@ -61,7 +62,7 @@ export function resolveColor(name) {
 /** Series palette: --chart-1 … --chart-8 from theme.css. */
 export const seriesColor = (i) => cssVar(`--chart-${(i % 8) + 1}`);
 
-/** '#3b7de8' + 0.15 → 'rgba(59,125,232,0.15)'. Non-hex colours are returned unchanged. */
+/** A hex colour plus an alpha → the same colour as rgba(). Non-hex colours are returned unchanged. */
 export function withAlpha(color, alpha) {
   const hex = color?.replace('#', '');
   if (!hex || !/^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(hex)) return color;
@@ -76,33 +77,52 @@ export function tooltipOptions(extra = {}) {
     backgroundColor: cssVar('--chart-tooltip-bg'),
     borderColor: cssVar('--chart-tooltip-border'),
     borderWidth: 1,
-    titleColor: cssVar('--color-text'),
-    bodyColor: cssVar('--color-text-muted'),
-    padding: 8,
+    cornerRadius: 8,
+    titleColor: cssVar('--app-text'),
+    bodyColor: cssVar('--app-text-muted'),
+    titleFont: { size: 12, weight: '700' },
+    bodyFont: { size: 11 },
+    padding: 9,
     ...extra,
   };
 }
 
+/** Legend: 10px, top-right, 8px swatches with a 2px radius. */
 export function legendOptions(show, position = 'top') {
   if (!show) return { display: false };
   return {
     display: true,
     position,
-    labels: { color: cssVar('--color-text-muted'), font: { size: 10 }, boxWidth: 8, usePointStyle: true, padding: 10 },
+    align: position === 'top' ? 'end' : 'center',
+    labels: {
+      color: cssVar('--app-text-muted'), font: { size: 10 },
+      usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 8, boxHeight: 8, padding: 10,
+      generateLabels: solidSwatches,
+    },
   };
 }
 
-export function axisOptions({ yMax, ySuggestedMax, xMaxTicks, yLabel, stacked = false, grid = false } = {}) {
-  const tick = { color: cssVar('--chart-tick'), font: { size: 9 } };
-  const gridCfg = grid ? { color: cssVar('--chart-grid') } : { display: false };
+// Line datasets carry a 12% area fill, which would make their legend swatch
+// hollow; paint each swatch in the series colour instead.
+function solidSwatches(chart) {
+  if (chart.config.type === 'doughnut') return ChartJS.overrides.doughnut.plugins.legend.labels.generateLabels(chart);
+  return ChartJS.defaults.plugins.legend.labels.generateLabels(chart)
+    .map((l) => ({ ...l, fillStyle: l.strokeStyle, lineWidth: 0, lineDash: [] }));
+}
+
+/** Axis labels 10px faint, axis line on the border token, horizontal grid only. */
+export function axisOptions({ yMax, ySuggestedMax, xMaxTicks, yLabel, stacked = false, grid = true } = {}) {
+  const tick = { color: cssVar('--chart-tick'), font: { size: 10 } };
+  const border = { color: cssVar('--app-border') };
+  const gridCfg = grid ? { color: cssVar('--chart-grid'), lineWidth: 1 } : { display: false };
   const xTick = xMaxTicks ? { ...tick, maxRotation: 0, autoSkip: true, maxTicksLimit: xMaxTicks } : tick;
   return {
-    x: { stacked, grid: { display: false }, ticks: xTick },
+    x: { stacked, grid: { display: false }, border, ticks: xTick },
     y: {
-      stacked, grid: gridCfg, ticks: tick, beginAtZero: true,
+      stacked, grid: gridCfg, border: { ...border, display: false }, ticks: tick, beginAtZero: true,
       ...(yMax != null ? { max: yMax } : {}),
       ...(ySuggestedMax != null ? { suggestedMax: ySuggestedMax } : {}),
-      ...(yLabel ? { title: { display: true, text: yLabel, color: cssVar('--chart-tick'), font: { size: 9 } } } : {}),
+      ...(yLabel ? { title: { display: true, text: yLabel, color: cssVar('--chart-tick'), font: { size: 10 } } } : {}),
     },
   };
 }

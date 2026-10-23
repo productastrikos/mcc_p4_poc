@@ -24,10 +24,10 @@ export default function NotificationsPanel({ onClose }) {
   };
 
   return (
-    <aside className="side-panel w-80 max-w-full">
+    <aside className="side-panel">
       <div className="panel-header">
         <div>
-          <h3 className="text-sm font-semibold text-fg">Notifications</h3>
+          <h3 className="panel-title">Notifications</h3>
           <p className="text-xs text-fg-faint">{unread.length} unread of {notifications.length} in the operations log</p>
         </div>
         <div className="flex items-center gap-2">

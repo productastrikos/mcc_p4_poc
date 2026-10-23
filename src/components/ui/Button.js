@@ -3,11 +3,13 @@ import Icon from './Icon';
 
 /**
  * Button
- *   variant: 'primary' | 'secondary' | 'ghost' | 'soft' | 'danger' | 'accent'
+ *   variant: 'primary' | 'secondary' | 'ghost' | 'soft' | 'danger' | 'accent' | 'advisory'
+ *            primary: the one filled action per view. accent: AI actions (tinted).
+ *            advisory: the single chrome control (the header's AI Briefing); use it once.
  *   size:    'sm' | 'md' | 'lg'
  *   icon:    icon name placed before the label
  *   block:   full width
- * Colours come from the --btn-* tokens in theme.css.
+ * Styles are the .btn-* classes in theme/theme.css.
  */
 export default function Button({
   variant = 'primary', size = 'md', icon, block = false,

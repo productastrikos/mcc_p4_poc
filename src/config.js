@@ -5,9 +5,12 @@
 
 export const APP = {
   name: 'Miri FloodSense',
+  short: 'FloodSense',                    // the name in the logo lockup
   subtitle: 'MSCCC Flood Early Warning',  // small line under the name in the header
-  logo: '/floodsense.svg',
-  logoInitials: 'FS',
+  org: 'Miri City Council',               // owner, shown beside the crest
+  orgLocal: 'Majlis Bandaraya Miri',      // the council's official Malay name (MBM)
+  logo: '/mcc-logo.svg',                  // MBM crest: Wikimedia Commons "Seal of Miri.svg", public domain
+  logoInitials: 'MBM',
   locale: 'en-MY',                        // header clock
 
   // Header features. Set to false to hide.

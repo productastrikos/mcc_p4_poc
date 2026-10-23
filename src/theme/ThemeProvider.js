@@ -1,29 +1,33 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-const STORAGE_KEY = 'app_theme';
-const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} });
+/* Theme switching (ASTRIKOS-UI-THEME §5.7): data-theme lives on <body>,
+   the choice persists, and dark is the default. public/index.html applies
+   the same rule before first paint. */
+const KEY = 'astrikos-theme';
 
-function initialTheme() {
-  let theme = window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'light' || saved === 'dark') theme = saved;
-  } catch (e) { /* storage unavailable */ }
-  // Applied before the first render so charts read the right colours.
-  document.documentElement.dataset.theme = theme;
-  return theme;
+export function applyTheme(mode /* 'dark' | 'light' */) {
+  document.body.setAttribute('data-theme', mode);
+  try { localStorage.setItem(KEY, mode); } catch {}
 }
 
-// Sets data-theme on <html>; the variables in theme.css switch on that attribute.
+export function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch {}
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(saved || (prefersLight ? 'light' : 'dark'));
+}
+
+const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} });
+
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(initialTheme);
+  const [theme, setTheme] = useState(() => document.body.getAttribute('data-theme') || 'dark');
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem(STORAGE_KEY, theme); } catch (e) { /* storage unavailable */ }
-  }, [theme]);
-
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  // The attribute changes before the re-render, so charts read the new colours.
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    setTheme(next);
+  };
 
   return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }

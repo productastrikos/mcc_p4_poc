@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Card, Field, PageHeader } from '../components/ui';
+import { Badge, Card, Field, Loading, PageHeader } from '../components/ui';
 import { ForecastCells, LevelWithState, MechanismBadge, OfflineBanner } from '../components/flood/bits';
 import { useData } from '../data/DataProvider';
 import { LEVEL_RANK, cm } from '../utils';
@@ -8,7 +8,7 @@ import { LEVEL_RANK, cm } from '../utils';
 export default function Hotspots() {
   const navigate = useNavigate();
   const { live, online } = useData();
-  if (!live) return <div className="space-y-4">{!online && <OfflineBanner />}<p className="text-sm text-fg-faint">Loading…</p></div>;
+  if (!live) return <div className="space-y-4">{!online && <OfflineBanner />}<Loading>Loading the live feed…</Loading></div>;
   const ranked = [...live.hotspots].sort((a, b) =>
     (LEVEL_RANK[b.assessment.level] - LEVEL_RANK[a.assessment.level]) || (b.assessment.probs['6h'] - a.assessment.probs['6h']));
 

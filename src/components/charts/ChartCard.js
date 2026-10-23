@@ -35,12 +35,14 @@ function styleDatasets(type, datasets) {
       return { borderWidth: 0, hoverOffset: 4, ...rest, backgroundColor: colors };
     }
     if (type === 'bar') {
-      const bg = Array.isArray(color) ? color.map(resolveColor) : resolveColor(color || `chart-${(i % 8) + 1}`);
-      return { borderRadius: 4, maxBarThickness: 36, ...rest, backgroundColor: bg };
+      // Bars at 88% alpha, lines 2px, area fills at 12% (ASTRIKOS-UI-THEME §10)
+      const bar = (c) => withAlpha(resolveColor(c), 0.88);
+      const bg = Array.isArray(color) ? color.map(bar) : bar(color || `chart-${(i % 8) + 1}`);
+      return { borderRadius: 6, maxBarThickness: 36, ...rest, backgroundColor: bg };
     }
     const c = resolveColor(color || `chart-${(i % 8) + 1}`);
     return {
-      borderColor: c, backgroundColor: withAlpha(c, 0.14),
+      borderColor: c, backgroundColor: withAlpha(c, 0.12),
       fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2,
       ...rest,
     };
@@ -126,7 +128,7 @@ export default function ChartCard({
       </Card>
 
       {showInfo && (
-        <Drawer eyebrow="Chart details" title={title} onClose={() => setShowInfo(false)} width={400}>
+        <Drawer eyebrow="Chart details" title={title} onClose={() => setShowInfo(false)} width={420}>
           <div className="space-y-5">
             {subtitle && <p className="text-xs text-fg-muted leading-relaxed">{subtitle}</p>}
             <div className="tile" style={{ height: 240 }}>

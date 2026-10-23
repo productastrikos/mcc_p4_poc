@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Badge, Button, Card, DetailGrid, Icon, PageHeader } from '../components/ui';
+import { Badge, Button, Card, DetailGrid, Icon, Loading, PageHeader } from '../components/ui';
 import ChartCard from '../components/charts/ChartCard';
 import CausePanel from '../components/flood/CausePanel';
 import CCTVCheck from '../components/flood/CCTVCheck';
@@ -40,7 +40,7 @@ function ForecastTiles({ a, cctv }) {
 function TwinSummary({ id, onOpen }) {
   const { data } = usePolled('/api/twin', 5000);
   const site = data?.sites?.find((s) => s.id === id);
-  if (!site) return <p className="text-xs text-fg-faint">Loading the twin…</p>;
+  if (!site) return <Loading>Loading the twin…</Loading>;
   const p = site.projection;
   const s = site.state;
   return (
@@ -75,7 +75,7 @@ export default function HotspotDetail() {
     api.get(`/api/live/history/${id}?hours=36`).then(setHist).catch(() => {});
   }, [id, simTime]);
 
-  if (!live) return <div className="space-y-4">{!online && <OfflineBanner />}<p className="text-sm text-fg-faint">Loading…</p></div>;
+  if (!live) return <div className="space-y-4">{!online && <OfflineBanner />}<Loading>Loading the live feed…</Loading></div>;
   if (!h) {
     return (
       <Card title="Unknown hotspot">
@@ -160,7 +160,7 @@ export default function HotspotDetail() {
             data={{
               labels,
               datasets: [
-                { label: '+1 h', data: hist.p1.map((v) => (v == null ? null : v * 100)), color: 'chart-5', fill: false },
+                { label: '+1 h', data: hist.p1.map((v) => (v == null ? null : v * 100)), color: 'chart-3', fill: false },
                 { label: '+3 h', data: hist.p3.map((v) => (v == null ? null : v * 100)), color: 'primary', fill: false, borderWidth: 2.5 },
                 { label: '+6 h', data: hist.p6.map((v) => (v == null ? null : v * 100)), color: 'chart-8', fill: false, borderDash: [5, 3] },
               ],

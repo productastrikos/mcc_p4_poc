@@ -138,7 +138,7 @@ export function DataProvider({ children }) {
     <DataContext.Provider value={value}>
       {children}
       {toast && (
-        <div className={`toast tile tone-${toast.tone} text-xs font-semibold shadow-lg`} role="status">{toast.text}</div>
+        <div className={`toast tile tone-${toast.tone} text-xs font-bold`} role="status">{toast.text}</div>
       )}
     </DataContext.Provider>
   );

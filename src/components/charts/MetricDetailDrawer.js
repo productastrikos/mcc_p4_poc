@@ -189,7 +189,7 @@ export default function MetricDetailDrawer({ metric, onClose, timeframes = TIMEF
           <ol className="grid sm:grid-cols-3 gap-3">
             {metric.insights.map((s, i) => (
               <li key={i} className="flex gap-2 text-[11px] text-fg leading-snug">
-                <span className="w-4 h-4 rounded-full bg-accent text-white text-[9px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                <span className="w-4 h-4 rounded-full bg-accent text-[10px] text-page font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                 {s}
               </li>
             ))}

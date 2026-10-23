@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Badge, Button, Card, FilterChips, Icon, PageHeader, Tabs } from '../components/ui';
+import { Badge, Button, Card, EmptyState, FilterChips, Icon, PageHeader, Tabs } from '../components/ui';
 import { AiTag, ForecastCells, LevelBadge, MechanismBadge, OfflineBanner } from '../components/flood/bits';
+import { APP } from '../config';
 import { useData } from '../data/DataProvider';
 import { api } from '../services/api';
 import { ALERT_STATUS, KIND_LABEL, SOURCE_LABEL, cm, dayTime, hhmm, longDate, timeAgo } from '../utils';
@@ -10,7 +11,6 @@ const MAX_CHARS = 300;   // English + Bahasa Malaysia together (server/llm.py AL
 const OPEN = ['pending', 'drafting'];
 const DONE = ['sent', 'approved'];
 const CLOSED = ['rejected', 'superseded', 'expired'];
-const LEVEL_COLOR = { Danger: '#b91c1c', Warning: '#b45309', Watch: '#0369a1', Normal: '#15803d' };
 
 function AlertListItem({ a, active, onClick }) {
   const st = ALERT_STATUS[a.status] || ALERT_STATUS.pending;
@@ -44,9 +44,9 @@ function PhonePreview({ en, ms, alert }) {
       {alert.exercise && <div className="phone-exercise">EXERCISE · not sent to the public</div>}
       <div className="phone-notif">
         <div className="phone-notif-app">
-          <img src="/floodsense.svg" alt="" width={14} height={14} style={{ borderRadius: 3 }} />
+          <img src={APP.logo} alt="" width={14} height={14} className="brand-logo" />
           Miri CARES · now
-          <span className="ml-auto" style={{ color: LEVEL_COLOR[level] }}>{alert.kind === 'all_clear' ? 'ALL CLEAR' : level.toUpperCase()}</span>
+          <span className={`ml-auto phone-level is-${level.toLowerCase()}`}>{alert.kind === 'all_clear' ? 'ALL CLEAR' : level.toUpperCase()}</span>
         </div>
         <div className="phone-notif-body">{en}{'\n\n'}{ms}</div>
       </div>
@@ -316,7 +316,7 @@ export default function AlertCentre() {
         </Card>
         <div className="xl:col-span-2">
           {selected ? <AlertDetail alert={selected} onChanged={refreshAlerts} onSelect={select} /> : (
-            <Card><p className="text-sm text-fg-faint text-center py-10">Select a draft to review it.</p></Card>
+            <Card><EmptyState icon="bell" title="No draft selected">Select a draft from the list to review its text and checklist, then approve or reject it.</EmptyState></Card>
           )}
         </div>
       </div>

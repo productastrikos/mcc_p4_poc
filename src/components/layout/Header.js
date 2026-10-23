@@ -74,7 +74,7 @@ function Search() {
       {open && query.trim() && (
         <div className="menu left-0 right-0">
           <div className="menu-section">
-            {results.length === 0 && <p className="text-xs text-fg-faint text-center py-3">No results for “{query}”</p>}
+            {results.length === 0 && <p className="menu-empty">No results for “{query}”. Try a page or hotspot name.</p>}
             {results.map((r) => (
               <button key={r.path} type="button" className="menu-item" onMouseDown={(e) => { e.preventDefault(); go(r.path); }}>
                 <Icon name={r.icon} size={15} />
@@ -99,9 +99,8 @@ function Clock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <span className="hidden md:inline-flex items-center gap-1.5 font-mono text-xs text-fg-muted px-2 py-1 rounded-md border bg-surface-raised"
-      title="Real time in Miri (Malaysia time, UTC+8)">
-      {mytClock(now)}<span className="text-[9px] font-sans font-bold tracking-wider text-fg-faint">MYT</span>
+    <span className="header-clock hidden md:inline-flex" title="Real time in Miri (Malaysia time, UTC+8)">
+      {mytClock(now)}<span className="astk-eyebrow">MYT</span>
     </span>
   );
 }
@@ -114,9 +113,9 @@ function ProfileMenu({ onOpenNotifications, onProfile, onSignOut, onSitrep }) {
   const user = operator || USER;
   useDismiss(ref, open, () => setOpen(false));
 
-  const item = (icon, label, onClick) => (
-    <button type="button" className="menu-item" role="menuitem" onClick={() => { setOpen(false); onClick?.(); }}>
-      <Icon name={icon} size={15} />{label}
+  const item = (icon, label, onClick, danger = false) => (
+    <button type="button" className={`menu-item ${danger ? 'is-danger' : ''}`} role="menuitem" onClick={() => { setOpen(false); onClick?.(); }}>
+      <Icon name={icon} size={16} />{label}
     </button>
   );
 
@@ -127,11 +126,12 @@ function ProfileMenu({ onOpenNotifications, onProfile, onSignOut, onSitrep }) {
       </button>
       {open && (
         <div className="menu right-0" role="menu">
-          <div className="flex items-center gap-3 px-4 py-3 border-b">
+          <div className="menu-header">
             <div className="avatar">{initials(user.name)}</div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-fg truncate">{user.name}</p>
-              <p className="text-[10px] text-fg-faint">{user.role}</p>
+              <p className="name truncate">{user.name}</p>
+              <p className="text-[10px] text-fg-faint truncate">{user.role}</p>
+              {operator && <span className="status">On shift</span>}
             </div>
           </div>
           <div className="menu-section">
@@ -141,7 +141,7 @@ function ProfileMenu({ onOpenNotifications, onProfile, onSignOut, onSitrep }) {
             {item('settings', 'Toggle theme', toggleTheme)}
           </div>
           <div className="menu-section">
-            {item('logout', 'Sign out', onSignOut)}
+            {item('logout', 'Sign out', onSignOut, true)}
           </div>
         </div>
       )}
@@ -164,9 +164,9 @@ export default function Header({ onToggleSidebar, activePanel, onTogglePanel }) 
     <header className="header">
       <IconButton icon="menu" label="Toggle sidebar" onClick={onToggleSidebar} />
 
-      <div className="hidden sm:flex flex-col ml-1 mr-2 leading-tight">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-fg">{APP.subtitle}</span>
-        <span className="text-[10px] text-fg-faint">{pageTitle}</span>
+      <div className="header-context hidden sm:flex">
+        <span className="astk-eyebrow">{APP.subtitle}</span>
+        <span className="font-display text-[13px] font-bold text-fg truncate">{pageTitle}</span>
       </div>
 
       {f.search && <Search />}
@@ -182,7 +182,7 @@ export default function Header({ onToggleSidebar, activePanel, onTogglePanel }) 
       </Button>
 
       {f.insights && (
-        <Button variant="accent" icon="sparkles" onClick={() => onTogglePanel('insights')} aria-pressed={activePanel === 'insights'}>
+        <Button variant="advisory" icon="sparkles" onClick={() => onTogglePanel('insights')} aria-pressed={activePanel === 'insights'} aria-label="AI Briefing">
           <span className="hidden md:inline">AI Briefing</span>
         </Button>
       )}
@@ -190,7 +190,7 @@ export default function Header({ onToggleSidebar, activePanel, onTogglePanel }) 
       {f.notifications && (
         <IconButton icon="bell" label="Notifications" active={activePanel === 'notifications'} onClick={() => onTogglePanel('notifications')}>
           {unread.length > 0 && (
-            <span className="notify-count" style={{ background: `var(--color-${hasDanger ? 'danger' : 'warning'})` }}>{unread.length}</span>
+            <span className={`notify-count ${hasDanger ? 'is-danger' : 'is-warning'}`}>{unread.length}</span>
           )}
         </IconButton>
       )}

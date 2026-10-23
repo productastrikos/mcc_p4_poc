@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Icon, Modal } from '../ui';
+import { Button, Loading, Modal } from '../ui';
 import { useData } from '../../data/DataProvider';
 import { api } from '../../services/api';
 import { dayTime } from '../../utils';
@@ -40,7 +40,7 @@ export default function SitrepModal({ onClose }) {
         </>
       )}>
       {error && <div className="tile tone-danger text-xs">{error}</div>}
-      {!rep && !error && <p className="text-xs text-fg-faint flex items-center gap-2"><Icon name="clock" size={14} />Building the report…</p>}
+      {!rep && !error && <Loading>Building the report…</Loading>}
       {rep && <pre className="sitrep">{rep.markdown}</pre>}
     </Modal>
   );

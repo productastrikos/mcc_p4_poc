@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Button, Card, DataTable, PageHeader, Tabs } from '../components/ui';
+import { Badge, Button, Card, DataTable, Loading, PageHeader, Tabs } from '../components/ui';
 import ChartCard from '../components/charts/ChartCard';
 import { MechanismBadge, OfflineBanner, SensorTile } from '../components/flood/bits';
 import { useData } from '../data/DataProvider';
@@ -36,7 +36,7 @@ export default function ModelPage() {
   const [h, setH] = useState('3');
 
   useEffect(() => { api.get('/api/model').then(setM).catch(() => {}); }, []);
-  if (!m) return <div className="space-y-4">{!online && <OfflineBanner />}<p className="text-sm text-fg-faint">Loading model report…</p></div>;
+  if (!m) return <div className="space-y-4">{!online && <OfflineBanner />}<Loading>Loading the model report…</Loading></div>;
 
   const hm = m.horizons[h];
   const imp = Object.entries(m.importance[h]).sort((a, b) => b[1] - a[1]);

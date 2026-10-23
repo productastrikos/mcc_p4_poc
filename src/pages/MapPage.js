@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, Circle } from 'react-leaflet';
 import { PageHeader, StatCard, StatGrid, Card, Badge, Button } from '../components/ui';
 import { MAP_CENTER, MAP_POINTS } from '../data/sampleData';
-import { resolveColor } from '../components/charts/chartTheme';
+import { cssVar, resolveColor } from '../components/charts/chartTheme';
 import { useTheme } from '../theme/ThemeProvider';
 
 const STATUS = {
@@ -77,7 +77,7 @@ export default function MapPage() {
             ))}
             {visible.map((p) => (
               <CircleMarker key={`${p.id}-${theme}`} center={[p.lat, p.lng]} radius={8}
-                pathOptions={{ color: '#ffffff', weight: 2, fillColor: color(p.status), fillOpacity: 1 }}
+                pathOptions={{ color: cssVar('--app-on-color'), weight: 2, fillColor: color(p.status), fillOpacity: 1 }}
                 eventHandlers={{ click: () => setSelected(p) }}>
                 <Popup><strong>{p.label}</strong><br />{STATUS[p.status].label}{p.value > 0 && <> · {p.value}%</>}</Popup>
               </CircleMarker>

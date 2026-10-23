@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Button, Card, DetailGrid, Icon, PageHeader, ProgressBar, Tabs } from '../components/ui';
+import { Badge, Button, Card, DetailGrid, Icon, Loading, PageHeader, ProgressBar, Tabs } from '../components/ui';
 import ChartCard from '../components/charts/ChartCard';
 import TwinSection from '../components/flood/TwinSection';
 import ResponsePanel from '../components/flood/ResponsePanel';
@@ -135,8 +135,8 @@ function Stat({ label, value, tone, sub }) {
   return (
     <div className="twin-stat">
       <p className="label-caps" style={{ fontSize: 8.5 }}>{label}</p>
-      <p className="text-[11.5px] font-bold tabular-nums leading-tight" style={tone ? { color: `var(--color-${tone})` } : undefined}>
-        {value}{sub && <span className="text-[9px] font-medium text-fg-faint ml-0.5">{sub}</span>}
+      <p className="text-xs font-bold tabular-nums leading-tight" style={tone ? { color: `var(--color-${tone})` } : undefined}>
+        {value}{sub && <span className="text-[10px] font-medium text-fg-faint ml-0.5">{sub}</span>}
       </p>
     </div>
   );
@@ -214,7 +214,7 @@ function SystemStrip({ twin, onSelect }) {
         </div>
       </Card>
       <Card title="Network status" subtitle={`${sites.length} Smart Drains, ${sites.length} outfalls, ${sites.length} CCTV cameras`}>
-        <div className="space-y-1 text-[11.5px]">
+        <div className="space-y-1 text-xs">
           <Row label="Drains at 80% or more" value={surcharged} tone={surcharged ? 'warning' : undefined} />
           <Row label="Outfalls tide-locked / partly" value={`${locked} / ${part}`} tone={locked ? 'danger' : part ? 'warning' : undefined} />
           <Row label="Roads flooded now" value={flooded} tone={flooded ? 'danger' : undefined} />
@@ -367,7 +367,7 @@ export default function DigitalTwin() {
     (LEVEL_RANK[b.level] - LEVEL_RANK[a.level]) || (b.projection.peak_depth_cm - a.projection.peak_depth_cm)) : []), [twin]);
 
   if (!twin) {
-    return <div className="space-y-4">{(!online || error) && <OfflineBanner />}<p className="text-sm text-fg-faint">Loading the digital twin…</p></div>;
+    return <div className="space-y-4">{(!online || error) && <OfflineBanner />}<Loading>Loading the digital twin…</Loading></div>;
   }
   const sel = twin.sites.find((s) => s.id === selected) || twin.sites[0];
   const frames = Object.fromEntries(twin.sites.map((s) => [s.id, frameFor(s, twin, hist, offset) || frameFor(s, twin, null, 0)]));

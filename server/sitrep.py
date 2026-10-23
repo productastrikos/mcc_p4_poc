@@ -28,6 +28,8 @@ def build(snap: dict, alerts: list, operator: str, generated_at: str) -> str:
     lines = [
         "# MSCCC Flood Situation Report",
         "",
+        "Miri City Council (Majlis Bandaraya Miri) · Miri Smart City Command Centre",
+        "",
         f"- **Sensor time:** {_day(snap['sim_time'])} MYT ({mode})",
         f"- **Generated:** {_day(generated_at)} MYT by {operator}",
         f"- **Status:** {counts['Danger']} Danger, {counts['Warning']} Warning, {counts['Watch']} Watch, "

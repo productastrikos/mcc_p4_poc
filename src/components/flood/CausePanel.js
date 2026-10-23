@@ -41,7 +41,7 @@ export default function CausePanel({ assessment, compact = false }) {
           <p className="label-caps">Top drivers (share of +{k} risk, model forecast)</p>
           {a.drivers.map((d) => (
             <div key={d.key}>
-              <div className="flex justify-between gap-2 text-[11.5px] mb-1">
+              <div className="flex justify-between gap-2 text-xs mb-1">
                 <span className="text-fg">{d.text}</span>
                 <span className="text-fg-faint tabular-nums">{pct(d.weight)}</span>
               </div>
@@ -55,7 +55,7 @@ export default function CausePanel({ assessment, compact = false }) {
         <div className="tile space-y-1.5">
           <p className="label-caps">What-if checks (+{k} risk now {pct(base)})</p>
           {checks.map(([label, v]) => (
-            <div key={label} className="flex items-center justify-between text-[11.5px]">
+            <div key={label} className="flex items-center justify-between text-xs">
               <span className="text-fg-muted">{label}</span>
               <span className="font-semibold text-fg tabular-nums">{pct(base)} <Icon name="chevronRight" size={11} className="inline text-fg-faint" /> {pct(v)}</span>
             </div>

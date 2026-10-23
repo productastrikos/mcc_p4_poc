@@ -1,5 +1,6 @@
+/* The Astrikos theme (tokens + every component class) loads first, before
+   Tailwind's utilities (ASTRIKOS-UI-THEME §5.1). */
 @import './theme/theme.css';
-@import './theme/components.css';
 
 @tailwind base;
 @tailwind components;

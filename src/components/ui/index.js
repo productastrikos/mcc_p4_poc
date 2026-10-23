@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from './Icon';
 
 // UI kit. Import from here: import { Card, Button, Badge } from '../components/ui';
 export { default as Icon } from './Icon';
@@ -20,15 +21,15 @@ export function ProgressBar({ value, max = 100, tone = 'primary', className = ''
   );
 }
 
-/** PageHeader: page title, optional subtitle and right-aligned actions. */
+/** PageHeader: every page opens with it. Title and subtitle left, page actions right. */
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <div className="flex items-start justify-between flex-wrap gap-4">
-      <div>
+    <div className="page-header-block">
+      <div className="min-w-0">
         <h1 className="page-title">{title}</h1>
         {subtitle && <p className="page-subtitle">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
+      {actions && <div className="page-actions">{actions}</div>}
     </div>
   );
 }
@@ -44,7 +45,29 @@ export function Field({ label, children }) {
   return (
     <div className="flex justify-between gap-3 text-xs">
       <span className="text-fg-faint">{label}</span>
-      <span className="text-fg font-medium">{children}</span>
+      <span className="text-fg font-bold tabular-nums">{children}</span>
+    </div>
+  );
+}
+
+/** EmptyState: what is missing and the next action (ASTRIKOS-UI-THEME §7.19). */
+export function EmptyState({ icon = 'info', title, children, action }) {
+  return (
+    <div className="app-empty">
+      <Icon name={icon} size={44} className="app-empty-icon" />
+      {title && <p className="app-empty-title">{title}</p>}
+      {children && <p className="app-empty-text">{children}</p>}
+      {action}
+    </div>
+  );
+}
+
+/** Loading: the spinner and a line saying what is loading. */
+export function Loading({ children = 'Loading…' }) {
+  return (
+    <div className="app-loading py-12" role="status">
+      <div className="app-loading-orbit" />
+      <p className="app-loading-text">{children}</p>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function FeedControls({ compact = false }) {
     : 'Sensor clock (Malaysia time). This is a simulation: the clock is not the real time.';
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <div className="flex items-center gap-2 px-3 h-[34px] rounded-lg border bg-surface" title={title}>
+      <div className="feed-chip" title={title}>
         <span className={`live-dot ${live.playing ? '' : 'is-paused'} ${offLive ? 'is-sim' : ''}`} />
         <span className="text-[10.5px] font-bold uppercase tracking-wider text-fg">{FEED_LABEL[live.source]}{live.source === 'live' && !synced ? ' (sim)' : ''}</span>
         <span className="font-mono text-xs text-fg-muted">{dayTime(live.sim_time)}</span>
